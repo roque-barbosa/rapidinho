@@ -1,0 +1,38 @@
+version: "3.5"
+
+services:
+  mysql_db:
+    image: mysql:5.7
+    container_name: mysql_db
+    env_file: .env
+    volumes:
+      - ./data/db:/var/lib/mysql:rw
+    expose: 
+      - 3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    ports: 
+      - ${DB_PORT}:3306
+    restart: always
+  
+  redis:
+    image: redis:6.0.9-alpine
+    ports:
+        - ${REDIS_PORT}:6379
+    restart: always
+    
+  api:
+    env_file: .env
+    build: 
+      context: .
+    volumes: 
+      - ./.env:/mnt/api/.env
+    expose: 
+      - ${API_PORT}
+    ports: 
+      - ${API_PORT}:${API_PORT}
+    depends_on:
+      - mysql_db
+      - redis
