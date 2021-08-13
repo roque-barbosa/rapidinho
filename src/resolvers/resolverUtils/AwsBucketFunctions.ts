@@ -180,33 +180,104 @@ export async function deleteFileFromClientBucket(clientCpf: String, key: String)
 
 };
 
+export async function deletContentAndBucketFromUser(clientCpf: String): Promise<Boolean>{
 
-// //delete objects.
-// export async function deleteObjects(clientName: String, clientCpf: String){
+  let bucketName = `${clientCpf}-bucket`
 
-//   // create an object to hold the name of the bucket and the objects to be deleted.
-//   const params = {
-//       Bucket: `${clientCpf}-${clientName}`,
-//       Delete:{
-//           Objects:[]
-//       }
-//   };
+  try {
 
-//   // Loop through all the object keys sent pushing them to the params object.
-//   objectKeys.forEach((objectKey) => params.Delete.Objects.push({
-//       Key:objectKey
-//   }));
+    // create an object to hold the name of the bucket, key, body, and acl of the object.
+    let params = {
+      Bucket: bucketName,
+    }
 
-//   // promisify the deleteObjects() function so that we can use the async/await syntax.
-//   let removeObjects = promisify(this.s3.deleteObjects.bind(this.s3));
+    // promisify the listObjects() function so that we can use the async/await syntax.
+    let getObjects = promisify(s3.listObjects.bind(s3));
 
-//   // remove the objects.
-//   await removeObjects(params).catch(console.log);
+    // get the objects.
+    let fechResult = await getObjects(params)
+    //onsole.log(fechResult.Contents[0].Key)
 
-//   // send back a response to the server.
-//   return {
-//       success:true,
-//       message:"Successfully deleted objects"
-//   };
+    // create an object to hold the name of the bucket and the objects to be deleted.
+    const deleteParams = {
+      Bucket:bucketName,
+      Delete:{
+          Objects:[]
+      }
+    };
 
-// };
+    // Loop through each object returned, structuring the data to be pushed to the objects array.
+    fechResult.Contents.forEach( (content: any) => {
+      return deleteParams.Delete.Objects.push({
+        //@ts-ignore
+        Key:content.Key})
+    })
+    
+    if (deleteParams.Delete.Objects.length >= 1) {
+      // promisify the deleteObjects() function so that we can use the async/await syntax.
+      let removeObjects = promisify(s3.deleteObjects.bind(s3));
+  
+      await removeObjects(deleteParams)
+    }
+
+
+    await deleteClientBucket(clientCpf)
+
+  // // Loop through all the object keys sent pushing them to the params object.
+  // //fetchedObjectsKeys.forEach((objectKey) => deleteParams.Delete.Objects.push(objectKey));
+
+  return true
+
+
+  } catch (error) {
+    console.log(error.message)
+    return false
+  }
+}
+
+export async function uploadTaxiDocumentsToBucket(fileName: any, createReadStream: any, clientCpf: String){
+  try {
+
+    // create an object to hold the name of the bucket, key, body, and acl of the object.
+    const params = {
+      Bucket: `${clientCpf}-bucket`,
+      Key: '',
+      Body: '',
+      ACL:'public-read'
+    }
+
+    // set the body of the object as data to read from the file.
+    params.Body = await createReadStream()
+    
+
+    // get the current time stamp.
+    //let timestamp = new Date().getTime();
+
+    // get the file extension.
+    console.log(fileName)
+    let file_extension = extname(fileName)
+    
+    
+
+    // set the key as a combination of the folder name, clientCpf, and the file extension of the object.
+    params.Key = `taxi-documents/${clientCpf}${file_extension}`;
+
+    // promisify the upload() function so that we can use async/await syntax.
+    let upload = promisify(s3.upload.bind(s3))
+
+    // upload the object.
+    let result = await upload(params)
+
+    // structure the response.
+    let object = {
+        key:params.Key,
+        url:result.Location
+    };
+
+    return object
+
+  } catch (error) {
+    console.log(error.message)
+    return undefined
+  }
+}

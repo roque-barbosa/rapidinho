@@ -12,6 +12,8 @@ import { COOKIE_NAME } from "./constants";
 import { ClientResolver } from "./resolvers/ClientResolver";
 import { HelloResolver } from "./resolvers/HelloResolver";
 import { graphqlUploadExpress } from "graphql-upload";
+import { TaxiResolver } from "./resolvers/TaxiResolver";
+//import { deletContentAndBucketFromUser } from "./resolvers/resolverUtils/AwsBucketFunctions";
 
 async function main() {
 
@@ -86,7 +88,8 @@ async function main() {
         schema: await buildSchema({
             resolvers: [
                 ClientResolver,
-                HelloResolver
+                HelloResolver,
+                TaxiResolver
             ],
             validate: false
         }),
@@ -104,7 +107,7 @@ async function main() {
 
     //app.use(cors)
 
-    app.get('/', (_, res) => {res.send(process.env.REDIS_URL)})
+    app.get('/', async (_, res) => {res.send("Hi")})
 
     app.listen(process.env.PORT || 3333, () => {console.log('server started on port 3333')})
 

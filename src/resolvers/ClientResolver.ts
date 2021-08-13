@@ -8,7 +8,7 @@ import { GenericError, ResponseCreateOrUpdateClient } from "./GraphqlTypes";
 import { Client } from "../entity/Client";
 import argon2 from 'argon2'
 import { getConnection } from "typeorm";
-import { createClientBucket, deleteClientBucket, deleteFileFromClientBucket, fetchProfilePictureToBucket, uploadProfilePictureToBucket } from "./resolverUtils/AwsBucketFunctions";
+import { createClientBucket, deletContentAndBucketFromUser, deleteClientBucket, deleteFileFromClientBucket, fetchProfilePictureToBucket, uploadProfilePictureToBucket } from "./resolverUtils/AwsBucketFunctions";
 import { Stream } from "stream";
 import { validateClientUpdate } from "../utils/validateClientUpdate";
 import { COOKIE_NAME } from "../constants";
@@ -239,12 +239,14 @@ export class ClientResolver{
 
     try {
 
-      const clientPic = await fetchProfilePictureToBucket(client.cpf)
-      const clientPicKey = clientPic[0].key
+      const resultDeleteBucket = await deletContentAndBucketFromUser(client.cpf)
 
-      await deleteFileFromClientBucket(client.cpf, clientPicKey)
+      // const clientPic = await fetchProfilePictureToBucket(client.cpf)
+      // const clientPicKey = clientPic[0].key
 
-      const resultDeleteBucket = await deleteClientBucket(client.cpf)
+      // await deleteFileFromClientBucket(client.cpf, clientPicKey)
+
+      // const resultDeleteBucket = await deleteClientBucket(client.cpf)
 
       if(resultDeleteBucket){
         Client.delete(id_client)
