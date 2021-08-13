@@ -11,6 +11,7 @@ import connectRedis from 'connect-redis'
 import { COOKIE_NAME } from "./constants";
 import { ClientResolver } from "./resolvers/ClientResolver";
 import { HelloResolver } from "./resolvers/HelloResolver";
+import { graphqlUploadExpress } from "graphql-upload";
 
 async function main() {
 
@@ -77,8 +78,11 @@ async function main() {
         saveUninitialized: false
     }))
 
+    app.use(graphqlUploadExpress({ maxFileSize: 1000000000, maxFiles: 10 }))
+
     // Apply apollo middleware
     const apolloServer = new ApolloServer({
+        uploads: false,
         schema: await buildSchema({
             resolvers: [
                 ClientResolver,
