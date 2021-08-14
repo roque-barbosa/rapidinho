@@ -13,7 +13,6 @@ import { ClientResolver } from "./resolvers/ClientResolver";
 import { HelloResolver } from "./resolvers/HelloResolver";
 import { graphqlUploadExpress } from "graphql-upload";
 import { TaxiResolver } from "./resolvers/TaxiResolver";
-//import { deletContentAndBucketFromUser } from "./resolvers/resolverUtils/AwsBucketFunctions";
 
 async function main() {
 
