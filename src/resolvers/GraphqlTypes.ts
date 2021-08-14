@@ -49,3 +49,21 @@ export class ResponseCreateOrUpdateTaxi{
     @Field(() => Taxi, {nullable:true})
     taxi?: Taxi
 }
+
+@ObjectType()
+export class updateFilesResponse {
+  @Field(() => [FieldError], {nullable:true})
+    errors?: FieldError[]
+
+  @Field(() => String, {nullable:true})
+  fileUrl?: string
+}
+
+@ObjectType()
+export class TaxiResponse {
+  @Field(() => String, {nullable:true})
+  errors?: string
+
+  @Field(() => [Taxi], {nullable:true})
+  taxis?: Taxi[]
+}

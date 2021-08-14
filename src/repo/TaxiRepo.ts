@@ -45,6 +45,20 @@ class TaxiRepo{
     const taxi = Taxi.findOne({where:{id:result.raw.insertId}})
     return taxi
   }
+
+  async getTaxiById(id: number){
+    const taxi = await Taxi.findOne({where:{id: id}})
+    return taxi
+  }
+
+  async getAllTaxis(){
+    const taxis = await Taxi.find()
+    return taxis
+  }
+
+  async deleteTaxiById(id: number){
+    Taxi.delete(id)
+  }
 }
 
 export default new TaxiRepo()

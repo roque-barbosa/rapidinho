@@ -157,7 +157,65 @@ export async function fetchProfilePictureToBucket(clientCpf: String){
 
 };
 
-export async function deleteFileFromClientBucket(clientCpf: String, key: String){
+export async function fetchTaxiDocumentsFromBucket(clientCpf: String){
+
+  const bucketName = `${clientCpf}-bucket`
+  // create an object to hold the name of the bucket.
+  const params = {
+      Bucket:bucketName,
+      Prefix: `taxi-documents/${clientCpf}`
+  };
+
+  // promisify the listObjects() function so that we can use the async/await syntax.
+  let getObjects = promisify(s3.listObjects.bind(s3));
+
+  //let test = s3.listObjects({Bucket:'teste',Prefix})
+
+  // get the objects.
+  let result = await getObjects(params)
+
+  // come up with the array to be returned.
+  let objects: any[] = [];
+
+  // Loop through each object returned, structuring the data to be pushed to the objects array.
+  result.Contents.forEach( (content: any) => {
+      return objects.push({
+          key:content.Key,
+          url:getBucketUrl.bind(bucketName,content.Key)
+      })
+  } );
+
+  // return response to the client.
+  return objects;
+
+};
+
+export async function deleteFilesFromTaxiBucket(clientCpf: string, key: string){
+
+
+  // create an object to hold the name of the bucket, and the key of an object.
+  const params = {
+      Bucket:`${clientCpf}-bucket`,
+      Key: key
+  };
+
+  try {
+    // promisify the deleteObject() so that we can use the async/await syntax.
+    let removeObject = promisify(s3.deleteObject.bind(s3));
+
+    // remove the object.
+    await removeObject(params)
+
+    // send back a response to the client.
+    return true
+  } catch (error) {
+    return false
+  }
+
+};
+
+export async function deleteFileFromClientBucket(clientCpf: string, key: string){
+
 
   // create an object to hold the name of the bucket, and the key of an object.
   const params = {
@@ -280,4 +338,22 @@ export async function uploadTaxiDocumentsToBucket(fileName: any, createReadStrea
     console.log(error.message)
     return undefined
   }
+}
+
+export async function updateTaxiDocuementsInBucket(fileName: any, createReadStream: any, clientCpf: String){
+
+  const documentsFromBucket = await fetchTaxiDocumentsFromBucket(clientCpf)
+  console.log(documentsFromBucket)
+  if (documentsFromBucket.length >= 1) {
+    const taxiFilesKey = documentsFromBucket[0].key
+    await deleteFilesFromTaxiBucket(clientCpf as string , taxiFilesKey)
+  }
+
+  const uploadResult = await uploadTaxiDocumentsToBucket(fileName, createReadStream, clientCpf)
+
+  if (!uploadResult) {
+    return undefined
+  }
+  return uploadResult
+  
 }
