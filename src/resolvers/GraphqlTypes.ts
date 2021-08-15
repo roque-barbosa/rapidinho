@@ -1,6 +1,7 @@
 import { Client } from "../entity/Client"
 import { Field, ObjectType } from "type-graphql"
 import { Taxi } from "../entity/Taxi"
+import { Veicle } from "../entity/Veicle"
 
 // If something unexpected happens, We'll gonna return
 // a generic error with the error msg
@@ -66,4 +67,13 @@ export class TaxiResponse {
 
   @Field(() => [Taxi], {nullable:true})
   taxis?: Taxi[]
+}
+
+@ObjectType()
+export class ResponseCreateOrUpdateVeicle{
+    @Field(() => [FieldError], {nullable:true})
+    errors?: FieldError[]
+
+    @Field(() => Veicle, {nullable:true})
+    veicle?: Veicle
 }

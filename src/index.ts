@@ -13,6 +13,7 @@ import { ClientResolver } from "./resolvers/ClientResolver";
 import { HelloResolver } from "./resolvers/HelloResolver";
 import { graphqlUploadExpress } from "graphql-upload";
 import { TaxiResolver } from "./resolvers/TaxiResolver";
+import { VeicleResolver } from "./resolvers/resolverUtils/VeicleResolver";
 
 async function main() {
 
@@ -36,18 +37,18 @@ async function main() {
             "synchronize": true,
             "logging": false,
             "entities": [
-               "dist/entity/**/*.js"
+            "dist/entity/**/*.js"
             ],
             "migrations": [
-               "dist/migration/**/*.js"
+            "dist/migration/**/*.js"
             ],
             "subscribers": [
-               "dist/subscriber/**/*.js"
+            "dist/subscriber/**/*.js"
             ],
             "cli": {
-               "entitiesDir": "src/entity",
-               "migrationsDir": "src/migration",
-               "subscribersDir": "src/subscriber"
+            "entitiesDir": "src/entity",
+            "migrationsDir": "src/migration",
+            "subscribersDir": "src/subscriber"
             }
          }) // Create DB connection
 
@@ -88,7 +89,8 @@ async function main() {
             resolvers: [
                 ClientResolver,
                 HelloResolver,
-                TaxiResolver
+                TaxiResolver,
+                VeicleResolver
             ],
             validate: false
         }),
