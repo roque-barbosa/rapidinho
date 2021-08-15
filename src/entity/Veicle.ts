@@ -6,12 +6,31 @@ export enum VeicleType {
   CAR,
   MOTORCYCLE,
 }
+export enum VeicleColor {
+  RED,
+  GREEN,
+  BLUE,
+  WHITE,
+  BLACK,
+  GREY,
+  SILVER,
+  BROWN,
+  YELLOW
+
+}
 
 registerEnumType(
   VeicleType,
   {
       name: 'VeicleType',
       description: 'If the taxi is a car or a motorcycle'
+  }
+)
+registerEnumType(
+  VeicleColor,
+  {
+      name: 'VeicleColor',
+      description: 'Color of the veicle'
   }
 )
 
@@ -39,9 +58,9 @@ export class Veicle extends BaseEntity {
   @Column()
   model: string;
 
-  @Field(() => String)
+  @Field(() => VeicleColor)
   @Column()
-  color: string;
+  color: VeicleColor;
 
   @Field(() => Taxi)
   @ManyToOne(() => Taxi, taxi => taxi.veicles, {onDelete: 'SET NULL', onUpdate: 'CASCADE', cascade:true})

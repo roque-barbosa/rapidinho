@@ -131,3 +131,12 @@ export class PaymentResponse {
   @Field(() => Payment, {nullable:true})
   payment?: Payment
 }
+
+@ObjectType()
+export class ResponseCreateOrUpdateVeicle{
+    @Field(() => [FieldError], {nullable:true})
+    errors?: FieldError[]
+
+    @Field(() => Veicle, {nullable:true})
+    veicle?: Veicle
+}

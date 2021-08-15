@@ -39,18 +39,18 @@ async function main() {
             "synchronize": true,
             "logging": false,
             "entities": [
-               "dist/entity/**/*.js"
+            "dist/entity/**/*.js"
             ],
             "migrations": [
-               "dist/migration/**/*.js"
+            "dist/migration/**/*.js"
             ],
             "subscribers": [
-               "dist/subscriber/**/*.js"
+            "dist/subscriber/**/*.js"
             ],
             "cli": {
-               "entitiesDir": "src/entity",
-               "migrationsDir": "src/migration",
-               "subscribersDir": "src/subscriber"
+            "entitiesDir": "src/entity",
+            "migrationsDir": "src/migration",
+            "subscribersDir": "src/subscriber"
             }
          }) // Create DB connection
 

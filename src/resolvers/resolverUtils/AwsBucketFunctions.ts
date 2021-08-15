@@ -357,3 +357,100 @@ export async function updateTaxiDocuementsInBucket(fileName: any, createReadStre
   return uploadResult
   
 }
+
+export async function uploadVeicleDocumentsToBucket(fileName: any, createReadStream: any, clientCpf: String, veicle_plaque: string){
+  try {
+
+    // create an object to hold the name of the bucket, key, body, and acl of the object.
+    const params = {
+      Bucket: `${clientCpf}-bucket`,
+      Key: '',
+      Body: '',
+      ACL:'public-read'
+    }
+
+    // set the body of the object as data to read from the file.
+    params.Body = await createReadStream()
+
+    // get the file extension.
+    console.log(fileName)
+    let file_extension = extname(fileName)
+
+    // set the key as a combination of the folder name, clientCpf, and the file extension of the object.
+    params.Key = `veicle-documents/${veicle_plaque}-${clientCpf}${file_extension}`;
+
+    // promisify the upload() function so that we can use async/await syntax.
+    let upload = promisify(s3.upload.bind(s3))
+
+    // upload the object.
+    let result = await upload(params)
+
+    // structure the response.
+    let object = {
+        key:params.Key,
+        url:result.Location
+    };
+
+    return object
+
+  } catch (error) {
+    console.log(error.message)
+    return undefined
+  }
+}
+
+export async function fetchVeicleDocuemtnsFromBucket(clientCpf: string, veicle_plaque: string){
+  const bucketName = `${clientCpf}-bucket`
+  // create an object to hold the name of the bucket.
+  const params = {
+      Bucket:bucketName,
+      Prefix: `veicle-documents/${veicle_plaque}`
+  };
+
+  // promisify the listObjects() function so that we can use the async/await syntax.
+  let getObjects = promisify(s3.listObjects.bind(s3));
+
+  //let test = s3.listObjects({Bucket:'teste',Prefix})
+
+  // get the objects.
+  let result = await getObjects(params)
+
+  // come up with the array to be returned.
+  let objects: any[] = [];
+
+  // Loop through each object returned, structuring the data to be pushed to the objects array.
+  result.Contents.forEach( (content: any) => {
+      return objects.push({
+          key:content.Key,
+          url:getBucketUrl.bind(bucketName,content.Key)
+      })
+  } );
+
+  // return response to the client.
+  return objects;
+}
+
+export async function deleteVeicleDocuemntsFromBucket(clientCpf: string, veicle_plaque: string){
+  try {
+    const veicleDocuementsObjects = await fetchVeicleDocuemtnsFromBucket(clientCpf, veicle_plaque)
+
+    if (veicleDocuementsObjects.length >= 1) {
+      const deleteParams = {
+        Bucket:`${clientCpf}-bucket`,
+        Delete:{
+            Objects:[]
+        }
+      }
+      veicleDocuementsObjects.forEach( (content: any) => {
+        return deleteParams.Delete.Objects.push({
+          //@ts-ignore
+          Key:content.key})
+      })
+      let removeObjects = promisify(s3.deleteObjects.bind(s3));
+      await removeObjects(deleteParams)
+    }
+    return true
+  } catch (error) {
+    return false
+  }
+}

@@ -1,15 +1,11 @@
-import { Arg, Mutation, Query, Resolver, Int } from "type-graphql";
-import { ResponseCreateOrUpdateVeicle, VeicleResponse } from "./GraphqlTypes";
-import { VeicleColor, VeicleType } from "../entity/Veicle";
-import VeiclesRepo from "../repo/VeiclesRepo";
-import { deleteVeicleDocuemntsFromBucket, uploadVeicleDocumentsToBucket } from "./resolverUtils/AwsBucketFunctions";
-import TaxiRepo from "../repo/TaxiRepo";
-import VeicleRepo from "../repo/VeicleRepo";
-import { FileUploadUrls } from "aws-sdk/clients/amplify";
 import { GraphQLUpload } from "graphql-upload";
-//import { Veicle } from "../entity/Veicle";
-//import { Run } from "../entity/Run";
-//import { Veicle } from "src/entity/Veicle";
+import { VeicleColor, VeicleType } from "../../entity/Veicle";
+import { Stream } from "stream";
+import { Arg, Int, Mutation, Resolver } from "type-graphql";
+import { ResponseCreateOrUpdateVeicle } from "../GraphqlTypes";
+import TaxiRepo from "../../repo/TaxiRepo";
+import { deleteVeicleDocuemntsFromBucket, uploadVeicleDocumentsToBucket } from "./AwsBucketFunctions";
+import veicleRepo from "../../repo/VeicleRepo";
 
 declare module "express-session" { // about this module - there was a issue with session
   interface Session {            // recognizing new elements in it, so its needed to do
@@ -17,9 +13,16 @@ declare module "express-session" { // about this module - there was a issue with
   }
 }
 
-@Resolver()
-export class VeicleResolver{
+interface FileUpload {
+  filename: string;
+  mimetype: string;
+  encoding: string;
+  createReadStream(): () => Stream;
+}
 
+
+@Resolver()
+export class VeicleResolvers{
   @Mutation(() => ResponseCreateOrUpdateVeicle)
   async createVeicle(
     @Arg('plaque', () => String) plaque: string,
@@ -27,7 +30,7 @@ export class VeicleResolver{
     @Arg('model', () => String) model: string,
     @Arg('veicleColor', () => String) veicleColor: VeicleColor,
     @Arg('veicleType', () => String) veicleType: VeicleType,
-    @Arg('crvVeicle', () => GraphQLUpload, {nullable: true}) {createReadStream, filename}: FileUploadUrls,
+    @Arg('crvVeicle', () => GraphQLUpload, {nullable: true}) {createReadStream, filename}: FileUpload,
   ):Promise<ResponseCreateOrUpdateVeicle>{
 
     const taxi = await TaxiRepo.getTaxiById(id_taxi)
@@ -53,7 +56,7 @@ export class VeicleResolver{
         }
       }
 
-      veicle = await VeicleRepo.createVeicle(plaque, taxi, model, veicleColor, veicleType, uploadCrvResult.url)
+      veicle = await veicleRepo.createVeicle(plaque, taxi, model, veicleColor, veicleType, uploadCrvResult.url)
     } catch (error) {
       console.log(error.message)
     }
@@ -73,7 +76,7 @@ export class VeicleResolver{
       return false
     }
 
-    const veicle = await VeiclesRepo.getVeicleById(id_veicle)
+    const veicle = await veicleRepo.getVeicleById(id_veicle)
     if (!veicle) {
       return false
     }
@@ -85,42 +88,4 @@ export class VeicleResolver{
       return false
     }
   }
-
-
-  @Query(() => VeicleResponse)
-  async getVeiclesByTaxi(
-    @Arg('id_taxi', () => Int) id_taxi: number
-  ):Promise<VeicleResponse>{
-    try{
-
-      const veicles = await VeiclesRepo.getVeiclesByTaxi(id_taxi);
-      return{
-        veicles: veicles
-      };
-
-    }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
-    }
-  }
-
-  @Query(() => VeicleResponse)
-  async getVeicleById(
-    @Arg('id_veicle', () => Int) id_veicle: number
-  ):Promise<VeicleResponse>{
-    try{
-
-      const veicles = await VeiclesRepo.getVeicleById(id_veicle);
-      return{
-        veicle: veicles
-      }
-
-    }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
-    }
-  }
-
 }
