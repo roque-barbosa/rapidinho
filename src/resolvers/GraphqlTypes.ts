@@ -1,6 +1,10 @@
 import { Client } from "../entity/Client"
 import { Field, ObjectType } from "type-graphql"
 import { Taxi } from "../entity/Taxi"
+import { Run } from "../entity/Run"
+import { Veicle } from "../entity/Veicle"
+import { User } from "../entity/User"
+import { Payment } from "../entity/Payment"
 
 // If something unexpected happens, We'll gonna return
 // a generic error with the error msg
@@ -66,4 +70,64 @@ export class TaxiResponse {
 
   @Field(() => [Taxi], {nullable:true})
   taxis?: Taxi[]
+
+  @Field(() => Taxi, {nullable:true})
+  taxi?: Taxi
+}
+
+@ObjectType()
+export class RunsResponse {
+  @Field(() => String, {nullable:true})
+  errors?: string
+
+  @Field(() => String, {nullable:true})
+  ret?: string
+
+  @Field(() => [Run], {nullable:true})
+  runs?: Run[]
+
+  @Field(() => Run, {nullable:true})
+  run?: Run
+}
+
+@ObjectType()
+export class VeicleResponse {
+  @Field(() => String, {nullable:true})
+  errors?: string
+
+  @Field(() => [Veicle], {nullable:true})
+  veicles?: Veicle[]
+
+  @Field(() => Veicle, {nullable:true})
+  veicle?: Veicle
+}
+
+@ObjectType()
+export class UserResponse {
+  @Field(() => String, {nullable:true})
+  errors?: string
+
+  @Field(() => String, {nullable:true})
+  ret?: string
+
+  @Field(() => [User], {nullable:true})
+  users?: User[]
+
+  @Field(() => User, {nullable:true})
+  user?: User
+}
+
+@ObjectType()
+export class PaymentResponse {
+  @Field(() => String, {nullable:true})
+  errors?: string
+
+  @Field(() => String, {nullable:true})
+  ret?: string
+
+  @Field(() => [Payment], {nullable:true})
+  payments?: Payment[]
+
+  @Field(() => Payment, {nullable:true})
+  payment?: Payment
 }

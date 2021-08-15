@@ -3,13 +3,15 @@ import { Entity, OneToMany} from "typeorm";
 import { Run } from "./Run";
 import bcryptjs from 'bcryptjs'
 import { User } from "./User";
+import { Payment } from "./Payment";
 
 // Entity and schema definition
 
 @ObjectType()
 @Entity()
 export class Client extends User {
-
+    @OneToMany(() => Payment, payment => payment.clients, {onDelete: 'SET NULL', onUpdate: 'CASCADE'})
+    payments: Payment[]
 
     @OneToMany(() => Run, run => run.client, {onDelete: 'SET NULL', onUpdate: 'CASCADE'})
     runs: Run[]

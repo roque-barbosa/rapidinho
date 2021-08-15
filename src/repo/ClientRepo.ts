@@ -12,7 +12,7 @@ class ClientRepo {
       return false
     }
     return client[0]
-  }
+  } 
   
   // Seatch clients by cpf (cpf is a unique key), if there is more than one
   // client with the same cpf, returns false

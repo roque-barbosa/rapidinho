@@ -13,6 +13,9 @@ import { ClientResolver } from "./resolvers/ClientResolver";
 import { HelloResolver } from "./resolvers/HelloResolver";
 import { graphqlUploadExpress } from "graphql-upload";
 import { TaxiResolver } from "./resolvers/TaxiResolver";
+import { RunsResolver } from "./resolvers/RunsResolver";
+import { VeicleResolver } from "./resolvers/VeiclesResponse";
+import { UserResolver } from "./resolvers/UserResolver";
 
 async function main() {
 
@@ -88,7 +91,10 @@ async function main() {
             resolvers: [
                 ClientResolver,
                 HelloResolver,
-                TaxiResolver
+                TaxiResolver,
+                RunsResolver,
+                VeicleResolver,
+                UserResolver
             ],
             validate: false
         }),

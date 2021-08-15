@@ -1,5 +1,5 @@
 
-import { Taxi } from "../entity/Taxi";
+import { Taxi, TaxiStatus } from "../entity/Taxi";
 import { SexType, UserType } from "../entity/User";
 import { getConnection } from "typeorm";
 import argon2 from 'argon2'
@@ -46,9 +46,35 @@ class TaxiRepo{
     return taxi
   }
 
+  async updateStatus(id_taxi: number, status: TaxiStatus){
+    try{  
+      await getConnection().createQueryBuilder().update(Taxi)
+      .set({
+        status: status
+      })
+      .where("id = :id", { id: id_taxi })
+      .execute()
+    
+    return true
+  }catch(error){
+      return false;
+  }
+  
+}
+
   async getTaxiById(id: number){
     const taxi = await Taxi.findOne({where:{id: id}})
     return taxi
+  }
+
+  async getTaxiByEmail(email_taxi: string){
+      const taxi = await Taxi.findOne({where: {email:email_taxi}});
+      return taxi;
+  }
+
+  async getTaxiByCPF(cpf_taxi: string){
+    const taxi = await Taxi.findOne({where: {cpf:cpf_taxi}});
+    return taxi;
   }
 
   async getAllTaxis(){
