@@ -1,6 +1,6 @@
 
 import PaymentRepo from "../repo/PaymentRepo";
-import { Arg, Float, Mutation, Resolver } from "type-graphql";
+import { Arg, Float, Int, Mutation, Resolver } from "type-graphql";
 import { PaymentResponse } from "./GraphqlTypes";
 
 declare module "express-session" { // about this module - there was a issue with session
@@ -15,7 +15,7 @@ export class PaymentResolver{
     @Mutation(()=> PaymentResponse)
     async createPayment(
         @Arg('price', () => Float) price: number,
-        @Arg('id_client', () => Float) id_client: number
+        @Arg('id_client', () => Int) id_client: number
     ):Promise<PaymentResponse>{
         try{
             const result = await PaymentRepo.createPayment(price, id_client);

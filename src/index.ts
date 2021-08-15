@@ -16,6 +16,7 @@ import { TaxiResolver } from "./resolvers/TaxiResolver";
 import { RunsResolver } from "./resolvers/RunsResolver";
 import { VeicleResolver } from "./resolvers/VeiclesResponse";
 import { UserResolver } from "./resolvers/UserResolver";
+import { PaymentResolver } from "./resolvers/PaymentResolver";
 
 async function main() {
 
@@ -93,10 +94,11 @@ async function main() {
                 HelloResolver,
                 TaxiResolver,
                 RunsResolver,
-                VeicleResolver,
-                UserResolver
-            ],
-            validate: false
+                VeicleResolver, 
+                UserResolver,
+                PaymentResolver
+            ], 
+            validate: false 
         }),
         context: ({req, res}) => ({
             req,

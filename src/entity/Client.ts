@@ -6,11 +6,11 @@ import { User } from "./User";
 import { Payment } from "./Payment";
 
 // Entity and schema definition
-
+ 
 @ObjectType()
 @Entity()
 export class Client extends User {
-    @OneToMany(() => Payment, payment => payment.clients, {onDelete: 'SET NULL', onUpdate: 'CASCADE'})
+    @OneToMany(() => Payment, payment => payment.client, {onDelete: 'SET NULL', onUpdate: 'CASCADE'})
     payments: Payment[]
 
     @OneToMany(() => Run, run => run.client, {onDelete: 'SET NULL', onUpdate: 'CASCADE'})
