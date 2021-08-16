@@ -4,6 +4,8 @@ import { Run } from "./Run";
 import bcryptjs from 'bcryptjs'
 import { User } from "./User";
 import { Payment } from "./Payment";
+import { AvaliationTaxi } from "./AvaliationTaxi";
+import { AvaliationClient } from "./AvaliationClient";
 
 // Entity and schema definition
  
@@ -12,6 +14,12 @@ import { Payment } from "./Payment";
 export class Client extends User {
     @OneToMany(() => Payment, payment => payment.client, {onDelete: 'SET NULL', onUpdate: 'CASCADE'})
     payments: Payment[]
+
+    @OneToMany(() => AvaliationTaxi, avaliationTaxi => avaliationTaxi.client, {onDelete: 'SET NULL', onUpdate: 'CASCADE'})
+    avaliationsTaxi: AvaliationTaxi[]
+
+    @OneToMany(() => AvaliationClient, avaliationClient => avaliationClient.client, {onDelete: 'SET NULL', onUpdate: 'CASCADE'})
+    avaliationClient: AvaliationClient[]
 
     @OneToMany(() => Run, run => run.client, {onDelete: 'SET NULL', onUpdate: 'CASCADE'})
     runs: Run[]

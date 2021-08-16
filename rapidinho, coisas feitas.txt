@@ -1,0 +1,29 @@
+Falta fazer
+	- Pagar Corrida
+	- Cliente Pagou
+
+Feito
+	- Login
+	- Cadastro Cliente
+	- Cadastro Taxi
+	- Cadastros de Veiculos
+	- Cadastros de Corrida/Solicitação de corrida
+	- Busca Corrida em Espera
+	- Verifica se corrida foi aceita
+	- Verifica se o Motorista Chegou
+	- Verifica se a Corrida Foi finalizada
+	- Excluir Cliente
+	- Excluir Taxi
+	- Consultar Histórico
+	- Mostrar Usuário
+	- Atualizar Passageiro
+	- Atualizar Motorista
+	- Atualizar Veiculo
+	- Cadastros de Pagamentos
+	- Buscar Pagamentos Pendentes
+
+	- Aceita Corrida[PRECISA ALTERAR O RETORNO DA CHAMADA]
+	- Me Encontrei Com o Cliente[PRECISA ALTERAR O RETORNO DA CHAMADA]
+	- Cheguei ao destino[PRECISA ALTERAR O RETORNO DA CHAMADA]
+	- Avaliar Motorista[FALTA ENCONTRAR UMA FORMA EFICAZ DE CALCULAR A NOTA]
+	- Avaliar Passageiro[FALTA ENCONTRAR UMA FORMA EFICAZ DE CALCULAR A NOTA]

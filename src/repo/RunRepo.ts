@@ -62,6 +62,14 @@ class RunRepo{
         return runs;
     }
 
+    async getPaymentRunsOpen(id_client: number){
+        let client: Client = new Client();
+        client.id = id_client;
+
+        const runs = await Run.find({where: {client: client, runPaymentStatus: 0}});
+        return runs;
+    }
+
     async getRunsByActive(id_taxi: number){
         let taxi: Taxi = new Taxi();
         taxi.id = id_taxi;

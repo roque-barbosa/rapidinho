@@ -5,6 +5,8 @@ import { Run } from "../entity/Run"
 import { Veicle } from "../entity/Veicle"
 import { User } from "../entity/User"
 import { Payment } from "../entity/Payment"
+import { AvaliationTaxi } from "../entity/AvaliationTaxi"
+import { AvaliationClient } from "../entity/AvaliationClient"
 
 // If something unexpected happens, We'll gonna return
 // a generic error with the error msg
@@ -130,6 +132,36 @@ export class PaymentResponse {
 
   @Field(() => Payment, {nullable:true})
   payment?: Payment
+}
+
+@ObjectType()
+export class AvaliationTaxiResponse {
+  @Field(() => String, {nullable:true})
+  errors?: string
+
+  @Field(() => String, {nullable:true})
+  ret?: string
+
+  @Field(() => [AvaliationTaxi], {nullable:true})
+  avaliationTaxis?: AvaliationTaxi[]
+
+  @Field(() => AvaliationTaxi, {nullable:true})
+  avaliationTaxi?: AvaliationTaxi
+}
+
+@ObjectType()
+export class AvaliationClientResponse {
+  @Field(() => String, {nullable:true})
+  errors?: string
+
+  @Field(() => String, {nullable:true})
+  ret?: string
+
+  @Field(() => [AvaliationClient], {nullable:true})
+  avaliationClients?: AvaliationClient[]
+
+  @Field(() => AvaliationTaxi, {nullable:true})
+  avaliationClient?: AvaliationTaxi
 }
 
 @ObjectType()

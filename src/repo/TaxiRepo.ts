@@ -85,6 +85,29 @@ class TaxiRepo{
   async deleteTaxiById(id: number){
     Taxi.delete(id)
   }
+
+  async updateScore(
+    score: number,
+    avaliationsQuantity: number,
+    id_taxi: number
+  ): Promise<Taxi | Boolean>{
+    try {
+      await getConnection()
+      .createQueryBuilder()
+      .update(Taxi)
+      .set({
+        score:score,
+        avaliationsQuantity: avaliationsQuantity
+      })
+      .where("id = :id", { id: id_taxi })
+      .execute()
+
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
 }
 
 export default new TaxiRepo()

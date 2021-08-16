@@ -1,5 +1,7 @@
 import { Field, ObjectType, registerEnumType } from "type-graphql";
 import {Entity, Column, OneToMany} from "typeorm";
+import { AvaliationClient } from "./AvaliationClient";
+import { AvaliationTaxi } from "./AvaliationTaxi";
 import { Run } from "./Run";
 import { User } from "./User";
 import { Veicle } from "./Veicle";
@@ -47,4 +49,10 @@ export class Taxi extends User {
 
     @OneToMany(() => Run, run => run.taxi, {onDelete: "SET NULL", onUpdate: 'CASCADE'})
     runs: Run[]
+
+    @OneToMany(() => AvaliationTaxi, avaliationTaxi => avaliationTaxi.taxi, {onDelete: "SET NULL", onUpdate: 'CASCADE'})
+    avaliationsTaxi: AvaliationTaxi[]
+
+    @OneToMany(() => AvaliationClient, avaliationClient => avaliationClient.taxi, {onDelete: "SET NULL", onUpdate: 'CASCADE'})
+    avaliationClient: AvaliationClient[]
 }
