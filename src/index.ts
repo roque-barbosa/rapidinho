@@ -13,7 +13,12 @@ import { ClientResolver } from "./resolvers/ClientResolver";
 import { HelloResolver } from "./resolvers/HelloResolver";
 import { graphqlUploadExpress } from "graphql-upload";
 import { TaxiResolver } from "./resolvers/TaxiResolver";
-import { VeicleResolver } from "./resolvers/resolverUtils/VeicleResolver";
+import { RunsResolver } from "./resolvers/RunsResolver";
+import { VeicleResolver } from "./resolvers/VeiclesResponse";
+import { UserResolver } from "./resolvers/UserResolver";
+import { PaymentResolver } from "./resolvers/PaymentResolver";
+import { AvaliationClientResolver } from "./resolvers/AvaliationClientResolver";
+import { AvaliationTaxiResolver } from "./resolvers/AvaliationTaxiResolver";
 
 async function main() {
 
@@ -90,9 +95,14 @@ async function main() {
                 ClientResolver,
                 HelloResolver,
                 TaxiResolver,
-                VeicleResolver
-            ],
-            validate: false
+                RunsResolver,
+                VeicleResolver, 
+                UserResolver,
+                PaymentResolver,
+                AvaliationClientResolver,
+                AvaliationTaxiResolver
+            ], 
+            validate: false 
         }),
         context: ({req, res}) => ({
             req,

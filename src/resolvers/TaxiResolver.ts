@@ -13,6 +13,7 @@ import { Stream } from "stream";
 //import { COOKIE_NAME } from "../constants";
 import { validateTaxiRegister } from "../utils/validateTaxiRegister";
 import taxiRepo from "../repo/TaxiRepo";
+import TaxiRepo from "../repo/TaxiRepo";
 
 declare module "express-session" { // about this module - there was a issue with session
   interface Session {            // recognizing new elements in it, so its needed to do
@@ -194,6 +195,71 @@ export class TaxiResolver{
       return false
     }
   }
+
+  @Query(() => TaxiResponse)
+  async getTaxiById(
+    @Arg('id_taxi', () => Int) id_taxi: number
+  ): Promise<TaxiResponse>{
+    try {
+      const taxi = await TaxiRepo.getTaxiById(id_taxi);
+      return{
+        taxi:taxi
+      }
+    } catch (error) {
+      return {
+        errors: "Somethin bad happened"
+      }
+    }
+  }
+
+  @Query(() => TaxiResponse)
+  async getTaxiByCPF(
+    @Arg('cpf_taxi', () => String) cpf_taxi: string
+  ):Promise<TaxiResponse>{
+    try{
+      const taxi = await TaxiRepo.getTaxiByCPF(cpf_taxi);
+      return{
+        taxi:taxi
+      }
+    }catch(error){
+      return{
+        errors: 'Somethin bad happened'
+      }
+    }
+      
+  }
+
+  @Query(()=> Int || String)
+  async getTaxiStatus(
+    @Arg('id_taxi', () => Int) id_taxi: number
+  ){
+    try{
+
+      const result = await TaxiRepo.getTaxiById(id_taxi);
+
+      return result?.status;
+
+    }catch(error){
+      return "Somethin bad happened"
+    }
+  }
+
+  @Query(()=> TaxiResponse)
+  async getTaxiByEmail(
+    @Arg('email_taxi', () => String) email_taxi: string
+  ):Promise<TaxiResponse>{
+    try{
+      const taxi = await TaxiRepo.getTaxiByEmail(email_taxi);
+      return{
+        taxi:taxi
+      }
+    }catch(error){
+      return{
+        errors: 'Somethin bad happened'
+      }
+    }
+  }
+
   // @Mutation(() => ResponseCreateOrUpdateClient)
   // async updateClient(
   //   //@Ctx() {req}: MyContext,

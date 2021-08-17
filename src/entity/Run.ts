@@ -80,7 +80,7 @@ export class Run extends BaseEntity {
     destinyCordinates: string;
 
     @Field(() => Float)
-    @Column({default: 5})
+    @Column()
     price: number;
 
     @Field(() => RunType)

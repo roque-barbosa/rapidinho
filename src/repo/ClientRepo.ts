@@ -12,7 +12,7 @@ class ClientRepo {
       return false
     }
     return client[0]
-  }
+  } 
   
   // Seatch clients by cpf (cpf is a unique key), if there is more than one
   // client with the same cpf, returns false
@@ -74,6 +74,28 @@ class ClientRepo {
     )
 
     return client
+  }
+
+  async updateScore(
+    score: number,
+    avaliationsQuantity: number,
+    id_client: number
+  ): Promise<Client | Boolean>{
+    try {
+      await getConnection()
+      .createQueryBuilder()
+      .update(Client)
+      .set({
+        score:score,
+        avaliationsQuantity: avaliationsQuantity
+      })
+      .where("id = :id", { id: id_client })
+      .execute()
+
+      return true
+    } catch (error) {
+      return false
+    }
   }
 }
 
