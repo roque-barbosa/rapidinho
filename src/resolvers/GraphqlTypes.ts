@@ -82,8 +82,8 @@ export class RunsResponse {
   @Field(() => String, {nullable:true})
   errors?: string
 
-  @Field(() => String, {nullable:true})
-  ret?: string
+  @Field(() => Boolean, {nullable:true})
+  ret?: Boolean
 
   @Field(() => [Run], {nullable:true})
   runs?: Run[]
@@ -132,6 +132,9 @@ export class PaymentResponse {
 
   @Field(() => Payment, {nullable:true})
   payment?: Payment
+
+  @Field(() => String, {nullable:true})
+  payment_url?: String
 }
 
 @ObjectType()

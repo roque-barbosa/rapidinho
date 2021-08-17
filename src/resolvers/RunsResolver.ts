@@ -58,99 +58,117 @@ export class RunsResolver{
 
     /* ------------------------------------------ ACCEPT RUN ---------------------------------------------- */
 
-  @Mutation(() => String)
+  @Mutation(() => RunsResponse)
   async runAccept(
     @Arg('id_run', () => Int) id_run: number,
     @Arg('id_taxi', () => Int) id_taxi: number
-  ){
+  ):Promise<RunsResponse>{
     try {
       const result = await TaxiRepo.getTaxiById(id_taxi);
   
       if(result!.score <= 4){
-          return "Your score is equal or less than 4"
+          return {
+            errors: "Your score is equal or less than 4"
+          }
       }
 
       const response = await TaxiRepo.updateStatus(id_taxi, TaxiStatus.AVAILABLE);
       if(response == false){
-        return "Fail in update status than Taxi"
+        return {
+          errors: "Fail in update status than Taxi"
+        }
       }
 
       await RunRepo.updateStatus(id_run, RunStatus.WAITING_TAXI);
+
+      const run = await RunRepo.getRunsById(id_run)
       
-      return "true"
+      return {
+        run:run
+      }
 
     } catch (error) {
       return {
-        message:"Somethin bad happened"
+        errors:"Somethin bad happened"
       }
     }
   }
 
     /* ------------------------------------------ TAXI FOUND CLIENT ---------------------------------------------- */
 
-  @Mutation(() => String)
+  @Mutation(() => RunsResponse)
   async taxiFoundClient(
     @Arg('id_run', () => Int) id_run: number,
     //@Arg('id_taxi', () => Int) id_taxi: number
-  ){
+  ):Promise<RunsResponse>{
     try {
 
       await RunRepo.updateStatus(id_run, RunStatus.OPEN);
       
-      return "true"
+      return {
+        ret: true
+      }
 
     } catch (error) {
       return {
-        message:"Somethin bad happened"
+        errors: "Somethin bad happened"
       }
     }
   }
 
   /* ------------------------------------------ TAXI ARRIVED DESTINATION ---------------------------------------------- */
-  @Mutation(() => String)
+  @Mutation(() => RunsResponse)
   async taxiArrivedDestination(
     @Arg('id_run', () => Int) id_run: number,
     @Arg('id_taxi', () => Int) id_taxi: number
-  ){
+  ):Promise<RunsResponse>{
     try {
 
       const response = await TaxiRepo.updateStatus(id_taxi, TaxiStatus.AVAILABLE);
       if(response == false){
-        return "Fail in update status than Taxi"
+        return {
+          errors: "Fail in update status than Taxi"
+        }
       }
 
       await RunRepo.updateStatus(id_run, RunStatus.CLOSED);
       
-      return "true"
+      return {
+        ret: true
+      }
 
     } catch (error) {
       return {
-        message:"Somethin bad happened"
+        errors: "Somethin bad happened"
       }
     }
   }
 
   /* ------------------------------------------ CANCEL RUN ---------------------------------------------- */
 
-  @Mutation(() => String)
+  @Mutation(() => RunsResponse)
   async runCancel(
     @Arg('id_run', () => Int) id_run: number
-  ){
+  ):Promise<RunsResponse>{
     try {
 
       const result = await RunRepo.getRunsById(id_run);
 
       if(result?.runStatus != RunStatus.PENDING){
-        return "Operation Not Valid"
+        return {
+          errors: "Operation Not Valid"
+        }
       }
 
       await RunRepo.updateStatus(id_run, RunStatus.CANCELED);
       
-      return "true"
+      return {
+        ret: true
+      }
 
     } catch (error) {
       return {
-        message:"Somethin bad happened"
+        errors: "Somethin bad happened"
       }
     }
   }

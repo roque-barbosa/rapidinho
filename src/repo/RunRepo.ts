@@ -88,6 +88,25 @@ class RunRepo{
         return runs;
     }
 
+    async setRunToPaid(id_client: number){
+        try {
+            const client = await ClientRepo.getClientById(id_client)
+            const run = await Run.findOne({where: {runPaymentStatus: 0, client: client}});
+            await getConnection()
+            .createQueryBuilder()
+            .update(Run)
+            .set({
+                runPaymentStatus: 1
+            })
+            .where("id = :id", { id: run!.id })
+            .execute()
+            return true
+            
+        } catch (error) {
+            return false
+        }
+    }
+
 }
 
 export default new RunRepo()
