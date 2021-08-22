@@ -2,18 +2,15 @@ import { MyContext } from "../types";
 import { Arg, Ctx, Int, Mutation, Query, Resolver } from "type-graphql";
 import { GraphQLUpload } from 'graphql-upload'
 import { SexType, UserType } from "../entity/User";
-//import clientRepo from '../repo/ClientRepo'
 import { GenericError, ResponseCreateOrUpdateTaxi, TaxiResponse, updateFilesResponse } from "./GraphqlTypes";
-//import { Client } from "../entity/Client";
-//import argon2 from 'argon2'
-//import { getConnection } from "typeorm";
+import argon2 from 'argon2'
 import { createClientBucket, deletContentAndBucketFromUser, updateTaxiDocuementsInBucket, uploadProfilePictureToBucket, uploadTaxiDocumentsToBucket } from "./resolverUtils/AwsBucketFunctions";
 import { Stream } from "stream";
-//import { validateClientUpdate } from "../utils/validateClientUpdate";
-//import { COOKIE_NAME } from "../constants";
+import { COOKIE_NAME } from "../constants";
 import { validateTaxiRegister } from "../utils/validateTaxiRegister";
 import taxiRepo from "../repo/TaxiRepo";
 import TaxiRepo from "../repo/TaxiRepo";
+import { Taxi } from "../entity/Taxi";
 
 declare module "express-session" { // about this module - there was a issue with session
   interface Session {            // recognizing new elements in it, so its needed to do
@@ -436,71 +433,71 @@ export class TaxiResolver{
   //   }
   // }
   
-  // @Mutation(() => ResponseCreateOrUpdateClient)
-  // async loginClient(
-  //   @Ctx() {req}: MyContext,
-  //   @Arg('cpfOrEmail', () => String) cpfOrEmail: string, 
-  //   @Arg('password', () => String) password: string,
-  //   ): Promise<ResponseCreateOrUpdateClient>{
+  @Mutation(() => ResponseCreateOrUpdateTaxi)
+  async loginTaxi(
+    @Ctx() {req}: MyContext,
+    @Arg('cpfOrEmail', () => String) cpfOrEmail: string, 
+    @Arg('password', () => String) password: string,
+    ): Promise<ResponseCreateOrUpdateTaxi>{
       
-  //     const client = await clientRepo.findClientByCpfOrEmail(cpfOrEmail)
+      const taxi = await taxiRepo.findTaxiByCpfOrEmail(cpfOrEmail)
       
-  //     if (!client){
-  //       return {
-  //         errors: [{
-  //           field: 'cpfOrEmail',
-  //           message: "CPF rr Email doesn't exist"
-  //         }]
-  //       }
-  //     }
+      if (!taxi){
+        return {
+          errors: [{
+            field: 'cpfOrEmail',
+            message: "CPF rr Email doesn't exist"
+          }]
+        }
+      }
 
-  //     const valid = await argon2.verify(client.hashed_password, password)
+      const valid = await argon2.verify(taxi.hashed_password, password)
 
-  //     if(!valid){
-  //       return {
-  //         errors: [{
-  //           field: 'password',
-  //           message: "Incorrect password"
-  //         }]
-  //       }
-  //     }
+      if(!valid){
+        return {
+          errors: [{
+            field: 'password',
+            message: "Incorrect password"
+          }]
+        }
+      }
 
-  //     req.session.userId = client.id
+      req.session.userId = taxi.id
 
-  //     return {
-  //       client: client
-  //     }
-  // }
+      return {
+        taxi: taxi
+      }
+    }
   
-  // @Mutation(() => Boolean)
-  // async logoutClient(
-  //   @Ctx() {req, res}: MyContext
-  //   ): Promise<Boolean>{
-  //     return new Promise(resolve => req.session.destroy(err => {
-  //       res.clearCookie(COOKIE_NAME)
-  //       if (err) {
-  //         console.log(err)
-  //         resolve(false)
-  //         return
-  //       }
-  //       // If nothing went wrong
-  //       resolve(true)
-  //     }))
-  // }
+  @Mutation(() => Boolean)
+  async logoutTaxi(
+    @Ctx() {req, res}: MyContext
+    ): Promise<Boolean>{
+      return new Promise(resolve => req.session.destroy(err => {
+        res.clearCookie(COOKIE_NAME)
+        if (err) {
+          console.log(err)
+          resolve(false)
+          return
+        }
+        // If nothing went wrong
+        resolve(true)
+      }))
+  }
 
-  // @Query(() => Client, {nullable: true})
-  //   async currentClient(
-  //       @Ctx() {req}: MyContext
-  //   ): Promise<Client | null>  {
-  //       if (!req.session.userId) {
-  //           // User not logged in
-  //           return null
-  //       }
+  @Query(() => Taxi, {nullable: true})
+    async currentClient(
+        @Ctx() {req}: MyContext
+    ): Promise<Taxi | null>  {
+        if (!req.session.userId) {
+            // User not logged in
+            return null
+        }
 
-  //       // let client = await Client.findOne({where: {id: req.session.clientId}})
-  //       let client = await clientRepo.getClientById(req.session.userId)
+        // let client = await Client.findOne({where: {id: req.session.clientId}})
+        let client = await taxiRepo.getTaxiById(req.session.userId)
         
-  //       return client! // Exclamation is to tell that if we got here, clint will never be undefined
-  //   }
+        return client! // Exclamation is to tell that if we got here, clint will never be undefined
+    }
 
 }

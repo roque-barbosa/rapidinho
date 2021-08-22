@@ -99,9 +99,9 @@ export class VeicleResolver{
       };
 
     }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
+      return {
+        errors: "Somethin bad happened"
+      }
     }
   }
 
@@ -117,9 +117,9 @@ export class VeicleResolver{
       }
 
     }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
+      return {
+        errors: "Somethin bad happened"
+      }
     }
   }
 

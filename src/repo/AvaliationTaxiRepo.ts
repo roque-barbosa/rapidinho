@@ -13,7 +13,8 @@ class AvaliationTaxiRepo{
         quantA = quantA+1;
         let sc!: Float;
         sc = taxi!.score;
-        sc = ((sc*2)*(score*0.5))/4;
+        // sc = ((sc*2)*(score*0.5))/4;
+        sc = ( (sc * 95) + (score * 5) )/100
 
         if(sc > 5){
             sc = 5;

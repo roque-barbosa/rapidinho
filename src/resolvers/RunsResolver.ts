@@ -188,9 +188,9 @@ export class RunsResolver{
       }
 
     }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
+      return {
+        errors: "Somethin bad happened"
+      }
     }
   }
 
@@ -208,9 +208,9 @@ export class RunsResolver{
       }
 
     }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
+      return {
+        errors: "Somethin bad happened"
+      }
     }
   }
 
@@ -231,9 +231,9 @@ export class RunsResolver{
       return false;
 
     }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
+      return {
+        errors: "Somethin bad happened"
+      }
     }
   }
 
@@ -254,9 +254,9 @@ export class RunsResolver{
       return false;
 
     }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
+      return {
+        errors: "Somethin bad happened"
+      }
     }
   }
 
@@ -277,9 +277,9 @@ export class RunsResolver{
       return false;
 
     }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
+      return {
+        errors: "Somethin bad happened"
+      }
     }
   }
 
@@ -300,9 +300,9 @@ export class RunsResolver{
       return false;
 
     }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
+      return {
+        errors: "Somethin bad happened"
+      }
     }
   }
   
@@ -329,9 +329,9 @@ export class RunsResolver{
         }
 
     }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
+      return {
+        errors: "Somethin bad happened"
+      }
     }
   }
 
@@ -348,9 +348,9 @@ export class RunsResolver{
       return run?.runStatus;
     
     }catch(error){
-       return {
-         errors: "Somethin bad happened"
-       }
+      return {
+        errors: "Somethin bad happened"
+      }
     }
   }
 

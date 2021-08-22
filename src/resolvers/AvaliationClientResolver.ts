@@ -2,6 +2,8 @@ import { Arg, Float, Int, Mutation, Query, Resolver } from "type-graphql";
 import { AvaliationClientResponse } from "./GraphqlTypes";
 import AvaliationTaxiRepo from "../repo/AvaliationTaxiRepo";
 import AvaliationClientRepo from "../repo/AvaliationClientRepo";
+import ClientRepo from "src/repo/ClientRepo";
+import TaxiRepo from "src/repo/TaxiRepo";
 
 declare module "express-session" { // about this module - there was a issue with session
     interface Session {            // recognizing new elements in it, so its needed to do
@@ -20,6 +22,26 @@ export class AvaliationClientResolver{
         @Arg('id_client', () => Int) id_client: number
     ):Promise<AvaliationClientResponse>{
         try{
+
+            if (score < 0) {
+                return{
+                    errors: "You can't give a negative score"
+                }
+            }
+
+            const client = ClientRepo.getClientById(id_client)
+            if (!client){
+                return{
+                    errors: "client not found"
+                }
+            }
+            const taxi = TaxiRepo.getTaxiById(id_taxi)
+            if (!taxi){
+                return{
+                    errors: "Taxi not found"
+                }
+            }
+
             const result = await AvaliationClientRepo.createAvaliationClient(score, comment, id_taxi, id_client);
             return{
                 avaliationClient: result

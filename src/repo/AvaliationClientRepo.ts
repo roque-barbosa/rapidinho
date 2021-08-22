@@ -8,11 +8,14 @@ class AvaliationClientRepo{//Taxi avalia o cliente
         const client = await ClientRepo.getClientById(id_client);
         const taxi = await TaxiRepo.getTaxiById(id_taxi);
 
+        // score = (sc*95 + score*5)/100
+
         let quantA = client!.avaliationsQuantity;
         quantA = quantA+1;
         
         let sc = client!.score;
-        sc = (sc+score)/quantA;
+        //sc = (sc+score)/quantA;
+        sc = ( (sc * 95) + (score * 5) )/100
 
         if(sc > 5){
             sc = 5;

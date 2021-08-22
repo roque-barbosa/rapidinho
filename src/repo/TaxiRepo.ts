@@ -108,6 +108,17 @@ class TaxiRepo{
     }
   }
 
+  async findTaxiByCpfOrEmail(cpfOrEmail: String){
+
+    const taxi = await Taxi.findOne(
+      cpfOrEmail.includes('@')
+      ? {where: {email: cpfOrEmail}}
+      : {where: {cpf: cpfOrEmail}}
+    )
+
+    return taxi
+  }
+
 }
 
 export default new TaxiRepo()
