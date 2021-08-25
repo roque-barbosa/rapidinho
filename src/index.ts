@@ -118,7 +118,7 @@ async function main() {
 
     //app.use(cors)
 
-    app.get('/', async (_, res) => {res.send("Hi")})
+    app.get('/', async (_, res) => {res.send("Hi this is a test")})
 
     app.listen(process.env.PORT || 3333, () => {console.log('server started on port 3333')})
 
