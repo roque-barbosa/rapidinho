@@ -2,8 +2,8 @@ import { Arg, Float, Int, Mutation, Query, Resolver } from "type-graphql";
 import { AvaliationClientResponse } from "./GraphqlTypes";
 import AvaliationTaxiRepo from "../repo/AvaliationTaxiRepo";
 import AvaliationClientRepo from "../repo/AvaliationClientRepo";
-import ClientRepo from "src/repo/ClientRepo";
-import TaxiRepo from "src/repo/TaxiRepo";
+import ClientRepo from "../repo/ClientRepo";
+import TaxiRepo from "../repo/TaxiRepo";
 
 declare module "express-session" { // about this module - there was a issue with session
     interface Session {            // recognizing new elements in it, so its needed to do
