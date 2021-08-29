@@ -42,7 +42,7 @@ export class Taxi extends User {
 
     @Field(() => String)
     @Column({nullable: true})
-    docmentaion_link: string;
+    documentation_link: string;
 
     @OneToMany(() => Veicle, veicle => veicle.taxi, {onDelete: "SET NULL", onUpdate: 'CASCADE'})
     veicles: Veicle[]

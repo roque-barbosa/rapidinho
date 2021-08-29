@@ -22,6 +22,12 @@ export class PaymentResolver{
         @Arg('id_client', () => Int) id_client: number
     ):Promise<PaymentResponse>{
         try{
+            if (qtd_km < 0) {
+                return{
+                    errors: "You need to provide a valid quantity of km"
+                }
+            }
+
             const client = await ClientRepo.getClientById(id_client)
             if (!client){
                 return{
@@ -67,9 +73,7 @@ export class PaymentResolver{
                 return false
             }
 
-            const setRunResult = await RunRepo.setRunToPaid(id_client)
-            return setRunResult
-            return false
+            return await RunRepo.setRunToPaid(id_client)
         } catch (error) {
             console.log(error.message)
             return false
@@ -83,6 +87,13 @@ export class PaymentResolver{
         @Arg('qtd_km', () => Float) qtd_km: number,
     ):Promise<PaymentResponse>{
         try {
+
+            if (qtd_km < 0) {
+                return{
+                    errors: "You need to provide a valid quantity of km"
+                }
+            }
+            
             const run = await RunRepo.getRunsById(id_run)
             if (!run) {
                 return{

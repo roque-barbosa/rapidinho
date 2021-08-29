@@ -2,18 +2,15 @@ import { MyContext } from "../types";
 import { Arg, Ctx, Int, Mutation, Query, Resolver } from "type-graphql";
 import { GraphQLUpload } from 'graphql-upload'
 import { SexType, UserType } from "../entity/User";
-//import clientRepo from '../repo/ClientRepo'
 import { GenericError, ResponseCreateOrUpdateTaxi, TaxiResponse, updateFilesResponse } from "./GraphqlTypes";
-//import { Client } from "../entity/Client";
-//import argon2 from 'argon2'
-//import { getConnection } from "typeorm";
+import argon2 from 'argon2'
 import { createClientBucket, deletContentAndBucketFromUser, updateTaxiDocuementsInBucket, uploadProfilePictureToBucket, uploadTaxiDocumentsToBucket } from "./resolverUtils/AwsBucketFunctions";
 import { Stream } from "stream";
-//import { validateClientUpdate } from "../utils/validateClientUpdate";
-//import { COOKIE_NAME } from "../constants";
+import { COOKIE_NAME } from "../constants";
 import { validateTaxiRegister } from "../utils/validateTaxiRegister";
 import taxiRepo from "../repo/TaxiRepo";
 import TaxiRepo from "../repo/TaxiRepo";
+import { Taxi } from "../entity/Taxi";
 
 declare module "express-session" { // about this module - there was a issue with session
   interface Session {            // recognizing new elements in it, so its needed to do
@@ -30,11 +27,11 @@ interface FileUpload {
 
 
 @Resolver()
-export class TaxiResolver{
+export class TaxiResolver {
 
   @Mutation(() => ResponseCreateOrUpdateTaxi)
   async createTaxi(
-    @Ctx() {req}: MyContext,
+    @Ctx() { req }: MyContext,
     @Arg('name', () => String) name: string,
     @Arg('email', () => String) email: string,
     @Arg('password', () => String) password: string,
@@ -43,62 +40,71 @@ export class TaxiResolver{
     @Arg('registrationNumber', () => String) registrationNumber: string,
     @Arg('phone', () => String) phone: string,
     @Arg('sex', () => String) sex: SexType,
-    @Arg('profilePic', () => GraphQLUpload, {nullable: true}) {createReadStream, filename}: FileUpload,
+    @Arg('profilePic', () => GraphQLUpload, { nullable: true }) profilePic: FileUpload,
     @Arg('birthDate', () => String) birthDate: Date,
     @Arg('nickName', () => String) nickName: string,
     @Arg('userType', () => String) userType: UserType,
-    @Arg('documents', () => GraphQLUpload, {nullable: true}) documents: FileUpload,
-  ):Promise<ResponseCreateOrUpdateTaxi | GenericError>{
+    @Arg('documents', () => GraphQLUpload, { nullable: true }) documents: FileUpload,
+  ): Promise<ResponseCreateOrUpdateTaxi | GenericError> {
 
     //Verify if there is any simple error with basic arguments
     const errors = await validateTaxiRegister(nickName, email, password, phone, cpf, cnh, registrationNumber)
     if (errors) {
-      return {errors}
-  }
-  
-    let uploadPicResult, uploadDocsResult
+      return { errors }
+    }
+
+    let uploadPicUrl, uploadDocsUrl
+
     try {
       // Creating Bucket to keep user files
       const resultCreateBucket = await createClientBucket(cpf)
 
       // Deleting user in case creating bucket fails
-      if (!resultCreateBucket){
-          return {
-            errors:[{
-              field: 'profilePicLink',
-              message: 'Problem with our image servers'
-            }]
-          }
-      } else {
+      if (!resultCreateBucket) {
+        return {
+          errors: [{
+            field: 'profilePicLink',
+            message: 'Problem with our image servers'
+          }]
+        }
+      }
 
-        uploadPicResult = await uploadProfilePictureToBucket(filename, createReadStream, cpf)
+      if (profilePic) {
+        try {
+          uploadPicUrl = await uploadProfilePictureToBucket(profilePic.filename, profilePic.createReadStream, cpf)
+        } catch (error) {
+          console.log(error)
 
-        if (!uploadPicResult){
           await deletContentAndBucketFromUser(cpf)
+
           return {
-            errors:[{
+            errors: [{
               field: 'profilePicLink',
               message: 'Problem while uploading profile piture'
             }]
           }
-        } else {
-          uploadDocsResult = await uploadTaxiDocumentsToBucket(documents.filename, documents.createReadStream, cpf)
-        
-          if (!uploadDocsResult) {
-            await deletContentAndBucketFromUser(cpf)
-            return {
-              errors:[{
-                field:'documents',
-                message: 'Problem while uploading docuemnts'
-              }]
-            }
+        }
+      }
+
+      if (documents) {
+        try {
+          uploadDocsUrl = await uploadTaxiDocumentsToBucket(documents.filename, documents.createReadStream, cpf)
+        } catch (error) {
+          console.log(error)
+
+          await deletContentAndBucketFromUser(cpf)
+          return {
+            errors: [{
+              field: 'documents',
+              message: 'Problem while uploading documents'
+            }]
           }
         }
       }
-    }catch (error) {
-    console.log(error.message)
-    
+    } catch (error) {
+      console.log(error.message)
     }
+
     const newTaxi = await taxiRepo.CreateTaxi(
       name,
       email,
@@ -108,30 +114,28 @@ export class TaxiResolver{
       registrationNumber,
       phone,
       sex,
-      // @ts-ignore
-      uploadPicResult.url as string,
       birthDate,
       nickName,
       userType,
-      // @ts-ignore
-      uploadDocsResult.url
+      uploadPicUrl,
+      uploadDocsUrl
     )
 
     req.session.userId = newTaxi!.id // After register, lon in
 
-    return{
+    return {
       taxi: newTaxi
     }
   }
 
-  @Mutation( () => updateFilesResponse)
+  @Mutation(() => updateFilesResponse)
   async updaloadTaxiFiles(
     @Arg('id_taxi', () => Int) id_taxi: number,
-    @Arg('documents', () => GraphQLUpload, {nullable: true}) documents: FileUpload,
-  ): Promise<updateFilesResponse>{
+    @Arg('documents', () => GraphQLUpload, { nullable: true }) documents: FileUpload,
+  ): Promise<updateFilesResponse> {
     const taxi = await taxiRepo.getTaxiById(id_taxi)
     if (!taxi) {
-      return{
+      return {
         errors: [{
           field: 'id_taxi',
           message: 'A taxi with this ID does not exist'
@@ -139,25 +143,18 @@ export class TaxiResolver{
       }
     }
     try {
-      const uploadResult = await updateTaxiDocuementsInBucket(documents.filename, documents.createReadStream, taxi.cpf)
-      if (!uploadResult) {
-        return{
-          errors: [{
-            field: 'documents',
-            message: 'Some problem with upload files'
-          }]
-        }
-      }
-  
+      const uploadUrl = await updateTaxiDocuementsInBucket(documents.filename, documents.createReadStream, taxi.cpf)
+
       return {
-        fileUrl: uploadResult.url
+        fileUrl: uploadUrl
       }
     } catch (error) {
-      console.log(error.message)
-      return{
+      console.log(error)
+
+      return {
         errors: [{
           field: 'documents',
-          message: 'Some undentified problem'
+          message: 'Some problem with upload files'
         }]
       }
     }
@@ -166,7 +163,7 @@ export class TaxiResolver{
   @Mutation(() => Boolean || GenericError)
   async deleteTaxiById(
     @Arg('id_taxi', () => Int) id_taxi: number
-  ){
+  ) {
 
     const taxi = await taxiRepo.getTaxiById(id_taxi)
 
@@ -185,12 +182,12 @@ export class TaxiResolver{
 
       // const resultDeleteBucket = await deleteClientBucket(client.cpf)
 
-      if(resultDeleteBucket){
+      if (resultDeleteBucket) {
         taxiRepo.deleteTaxiById(id_taxi)
         return true
       }
       return false
-      
+
     } catch (error) {
       return false
     }
@@ -199,11 +196,11 @@ export class TaxiResolver{
   @Query(() => TaxiResponse)
   async getTaxiById(
     @Arg('id_taxi', () => Int) id_taxi: number
-  ): Promise<TaxiResponse>{
+  ): Promise<TaxiResponse> {
     try {
       const taxi = await TaxiRepo.getTaxiById(id_taxi);
-      return{
-        taxi:taxi
+      return {
+        taxi: taxi
       }
     } catch (error) {
       return {
@@ -215,46 +212,46 @@ export class TaxiResolver{
   @Query(() => TaxiResponse)
   async getTaxiByCPF(
     @Arg('cpf_taxi', () => String) cpf_taxi: string
-  ):Promise<TaxiResponse>{
-    try{
+  ): Promise<TaxiResponse> {
+    try {
       const taxi = await TaxiRepo.getTaxiByCPF(cpf_taxi);
-      return{
-        taxi:taxi
+      return {
+        taxi: taxi
       }
-    }catch(error){
-      return{
+    } catch (error) {
+      return {
         errors: 'Somethin bad happened'
       }
     }
-      
+
   }
 
-  @Query(()=> Int || String)
+  @Query(() => Int || String)
   async getTaxiStatus(
     @Arg('id_taxi', () => Int) id_taxi: number
-  ){
-    try{
+  ) {
+    try {
 
       const result = await TaxiRepo.getTaxiById(id_taxi);
 
       return result?.status;
 
-    }catch(error){
+    } catch (error) {
       return "Somethin bad happened"
     }
   }
 
-  @Query(()=> TaxiResponse)
+  @Query(() => TaxiResponse)
   async getTaxiByEmail(
     @Arg('email_taxi', () => String) email_taxi: string
-  ):Promise<TaxiResponse>{
-    try{
+  ): Promise<TaxiResponse> {
+    try {
       const taxi = await TaxiRepo.getTaxiByEmail(email_taxi);
-      return{
-        taxi:taxi
+      return {
+        taxi: taxi
       }
-    }catch(error){
-      return{
+    } catch (error) {
+      return {
         errors: 'Somethin bad happened'
       }
     }
@@ -310,7 +307,7 @@ export class TaxiResolver{
   //       }]
   //     }
   //   }
-    
+
   //   // Updating client on databse
   //   await clientRepo.updateClient(
   //     id_client,
@@ -359,7 +356,7 @@ export class TaxiResolver{
   // //   } catch (error) {
   // //     return false
   // //   }
-    
+
   // // }
 
   // // @Query(() => Boolean)
@@ -400,22 +397,22 @@ export class TaxiResolver{
   //       return true
   //     }
   //     return false
-      
+
   //   } catch (error) {
   //     return false
   //   }
   // }
 
   @Query(() => TaxiResponse)
-  async getTaxis(): Promise<TaxiResponse>{
-    try{
+  async getTaxis(): Promise<TaxiResponse> {
+    try {
 
       const taxis = await taxiRepo.getAllTaxis()
       return {
         taxis: taxis
       }
 
-    }catch(error){
+    } catch (error) {
       return {
         errors: 'Somethin bad happened'
       }
@@ -435,72 +432,71 @@ export class TaxiResolver{
   //     }
   //   }
   // }
-  
-  // @Mutation(() => ResponseCreateOrUpdateClient)
-  // async loginClient(
-  //   @Ctx() {req}: MyContext,
-  //   @Arg('cpfOrEmail', () => String) cpfOrEmail: string, 
-  //   @Arg('password', () => String) password: string,
-  //   ): Promise<ResponseCreateOrUpdateClient>{
-      
-  //     const client = await clientRepo.findClientByCpfOrEmail(cpfOrEmail)
-      
-  //     if (!client){
-  //       return {
-  //         errors: [{
-  //           field: 'cpfOrEmail',
-  //           message: "CPF rr Email doesn't exist"
-  //         }]
-  //       }
-  //     }
 
-  //     const valid = await argon2.verify(client.hashed_password, password)
+  @Mutation(() => ResponseCreateOrUpdateTaxi)
+  async loginTaxi(
+    @Ctx() { req }: MyContext,
+    @Arg('cpfOrEmail', () => String) cpfOrEmail: string,
+    @Arg('password', () => String) password: string,
+  ): Promise<ResponseCreateOrUpdateTaxi> {
 
-  //     if(!valid){
-  //       return {
-  //         errors: [{
-  //           field: 'password',
-  //           message: "Incorrect password"
-  //         }]
-  //       }
-  //     }
+    const taxi = await taxiRepo.findTaxiByCpfOrEmail(cpfOrEmail)
 
-  //     req.session.userId = client.id
+    if (!taxi) {
+      return {
+        errors: [{
+          field: 'cpfOrEmail',
+          message: "CPF rr Email doesn't exist"
+        }]
+      }
+    }
 
-  //     return {
-  //       client: client
-  //     }
-  // }
-  
-  // @Mutation(() => Boolean)
-  // async logoutClient(
-  //   @Ctx() {req, res}: MyContext
-  //   ): Promise<Boolean>{
-  //     return new Promise(resolve => req.session.destroy(err => {
-  //       res.clearCookie(COOKIE_NAME)
-  //       if (err) {
-  //         console.log(err)
-  //         resolve(false)
-  //         return
-  //       }
-  //       // If nothing went wrong
-  //       resolve(true)
-  //     }))
-  // }
+    const valid = await argon2.verify(taxi.hashed_password, password)
 
-  // @Query(() => Client, {nullable: true})
-  //   async currentClient(
-  //       @Ctx() {req}: MyContext
-  //   ): Promise<Client | null>  {
-  //       if (!req.session.userId) {
-  //           // User not logged in
-  //           return null
-  //       }
+    if (!valid) {
+      return {
+        errors: [{
+          field: 'password',
+          message: "Incorrect password"
+        }]
+      }
+    }
 
-  //       // let client = await Client.findOne({where: {id: req.session.clientId}})
-  //       let client = await clientRepo.getClientById(req.session.userId)
-        
-  //       return client! // Exclamation is to tell that if we got here, clint will never be undefined
-  //   }
+    req.session.userId = taxi.id
+
+    return {
+      taxi: taxi
+    }
+  }
+
+  @Mutation(() => Boolean)
+  async logoutTaxi(
+    @Ctx() { req, res }: MyContext
+  ): Promise<Boolean> {
+    return new Promise(resolve => req.session.destroy(err => {
+      res.clearCookie(COOKIE_NAME)
+      if (err) {
+        console.log(err)
+        resolve(false)
+        return
+      }
+      // If nothing went wrong
+      resolve(true)
+    }))
+  }
+
+  @Query(() => Taxi, { nullable: true })
+  async currentClient(
+    @Ctx() { req }: MyContext
+  ): Promise<Taxi | null> {
+    if (!req.session.userId) {
+      // User not logged in
+      return null
+    }
+
+    let client = await taxiRepo.getTaxiById(req.session.userId)
+
+    return client! // Exclamation is to tell that if we got here, client will never be undefined
+  }
 
 }
