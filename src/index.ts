@@ -120,7 +120,7 @@ async function main() {
 
     app.get('/', async (_, res) => {res.send("Hi")})
 
-    app.listen(process.env.PORT || 3333, () => {console.log('server started on port 3333')})
+    app.listen(process.env.PORT || 3333, () => {console.log('server started')})
 
 }
 main()
