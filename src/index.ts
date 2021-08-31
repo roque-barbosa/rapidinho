@@ -64,7 +64,7 @@ async function main() {
     const app = express() // Initialize express
 
     app.use(cors({
-        origin: 'http://localhost:3000',
+        origin: '*',
         credentials: true
     }))
 

@@ -6,6 +6,7 @@ import RunRepo from "../repo/RunRepo";
 import ClientRepo from "../repo/ClientRepo";
 import { stripe } from "../stripe";
 import { RUN_PRICE } from "../constants";
+import "dotenv/config"
 
 declare module "express-session" { // about this module - there was a issue with session
     interface Session {            // recognizing new elements in it, so its needed to do
@@ -40,13 +41,13 @@ export class PaymentResolver{
                 payment_method_types: ['card'],
                 line_items: [{
                     // TODO: replace this with the `price` of the product you want to sell
-                    price: `price_1JKWxEKCMhVSKfjsmP5Pprmr`,
+                    price: process.env.RUN_BASIC_PRICE_ID,
                     quantity: qtd_km,
                 }],
                 mode: 'payment',
                 // TODO- create those routes
-                success_url: `${process.env.MY_DOMAIN}/payment_success`,
-                cancel_url: `${process.env.MY_DOMAIN}/payment_failed`,
+                success_url: `/`,
+                cancel_url: `/`,
             });
             
 
