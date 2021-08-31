@@ -14,11 +14,11 @@ class TaxiRepo{
     registrationNumber: string,
     phone: string,
     sex: SexType,
-    profilePicLink: string,
     birthDate: Date,
     nickName: string,
     userType: UserType,
-    docmentaion_link: string
+    profilePicLink?: string,
+    documentation_link?: string
   ){
 
     const result = await getConnection()
@@ -38,7 +38,7 @@ class TaxiRepo{
       birthDate: birthDate,
       nickName: nickName,
       userType: userType,
-      docmentaion_link: docmentaion_link
+      documentation_link: documentation_link
     })
     .execute()
 
@@ -106,6 +106,17 @@ class TaxiRepo{
     } catch (error) {
       return false
     }
+  }
+
+  async findTaxiByCpfOrEmail(cpfOrEmail: String){
+
+    const taxi = await Taxi.findOne(
+      cpfOrEmail.includes('@')
+      ? {where: {email: cpfOrEmail}}
+      : {where: {cpf: cpfOrEmail}}
+    )
+
+    return taxi
   }
 
 }

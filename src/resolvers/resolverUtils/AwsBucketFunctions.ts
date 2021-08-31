@@ -1,13 +1,8 @@
+import { String } from "aws-sdk/clients/cloudsearch";
 import {extname} from "path";
-//import { extname } from "path/posix";
 import { promisify } from "util";
 import s3 from '../../aws'
 import { getBucketUrl } from '../../utils/getBucketUrl'
-
-type objectResponse = {
-  key: String,
-  url: String
-}
 
 export async function createClientBucket(clientCpf: String) {
 
@@ -28,7 +23,12 @@ export async function createClientBucket(clientCpf: String) {
     return true
 
   }catch (error) {
-    console.log(error.message)
+    if(error.code === "BucketAlreadyOwnedByYou") {
+      return true
+    }
+    
+    console.log(error)
+    
     return false
   }
 }
@@ -75,10 +75,7 @@ export async function deleteClientBucket(clientCpf: String): Promise<Boolean>{
 
 }
 
-export async function uploadProfilePictureToBucket(fileName: any, createReadStream: any, clientCpf: String): Promise<objectResponse | undefined>{
-
-  try {
-
+export async function uploadProfilePictureToBucket(fileName: any, createReadStream: any, clientCpf: String): Promise<String>{
     // create an object to hold the name of the bucket, key, body, and acl of the object.
     const params = {
       Bucket: `${clientCpf}-bucket`,
@@ -95,10 +92,7 @@ export async function uploadProfilePictureToBucket(fileName: any, createReadStre
     //let timestamp = new Date().getTime();
 
     // get the file extension.
-    console.log(fileName)
     let file_extension = extname(fileName)
-    
-    
 
     // set the key as a combination of the folder name, clientCpf, and the file extension of the object.
     params.Key = `profile-picture/${clientCpf}${file_extension}`;
@@ -108,19 +102,8 @@ export async function uploadProfilePictureToBucket(fileName: any, createReadStre
 
     // upload the object.
     let result = await upload(params)
-
-    // structure the response.
-    let object = {
-        key:params.Key,
-        url:result.Location
-    };
-
-    return object
-
-  } catch (error) {
-    console.log(error.message)
-    return undefined
-  }
+    
+    return result.Location
 }
 
 //fetching objects.
@@ -293,9 +276,7 @@ export async function deletContentAndBucketFromUser(clientCpf: String): Promise<
   }
 }
 
-export async function uploadTaxiDocumentsToBucket(fileName: any, createReadStream: any, clientCpf: String){
-  try {
-
+export async function uploadTaxiDocumentsToBucket(fileName: any, createReadStream: any, clientCpf: String): Promise<String>{
     // create an object to hold the name of the bucket, key, body, and acl of the object.
     const params = {
       Bucket: `${clientCpf}-bucket`,
@@ -306,17 +287,10 @@ export async function uploadTaxiDocumentsToBucket(fileName: any, createReadStrea
 
     // set the body of the object as data to read from the file.
     params.Body = await createReadStream()
-    
-
-    // get the current time stamp.
-    //let timestamp = new Date().getTime();
 
     // get the file extension.
-    console.log(fileName)
     let file_extension = extname(fileName)
     
-    
-
     // set the key as a combination of the folder name, clientCpf, and the file extension of the object.
     params.Key = `taxi-documents/${clientCpf}${file_extension}`;
 
@@ -326,21 +300,10 @@ export async function uploadTaxiDocumentsToBucket(fileName: any, createReadStrea
     // upload the object.
     let result = await upload(params)
 
-    // structure the response.
-    let object = {
-        key:params.Key,
-        url:result.Location
-    };
-
-    return object
-
-  } catch (error) {
-    console.log(error.message)
-    return undefined
-  }
+    return result.Location
 }
 
-export async function updateTaxiDocuementsInBucket(fileName: any, createReadStream: any, clientCpf: String){
+export async function updateTaxiDocuementsInBucket(fileName: any, createReadStream: any, clientCpf: String): Promise<String>{
 
   const documentsFromBucket = await fetchTaxiDocumentsFromBucket(clientCpf)
   console.log(documentsFromBucket)
@@ -351,11 +314,7 @@ export async function updateTaxiDocuementsInBucket(fileName: any, createReadStre
 
   const uploadResult = await uploadTaxiDocumentsToBucket(fileName, createReadStream, clientCpf)
 
-  if (!uploadResult) {
-    return undefined
-  }
   return uploadResult
-  
 }
 
 export async function uploadVeicleDocumentsToBucket(fileName: any, createReadStream: any, clientCpf: String, veicle_plaque: string){
