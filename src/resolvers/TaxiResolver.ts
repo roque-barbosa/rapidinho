@@ -4,7 +4,13 @@ import { GraphQLUpload } from 'graphql-upload'
 import { SexType, UserType } from "../entity/User";
 import { GenericError, ResponseCreateOrUpdateTaxi, TaxiResponse, updateFilesResponse } from "./GraphqlTypes";
 import argon2 from 'argon2'
-import { createClientBucket, deletContentAndBucketFromUser, updateTaxiDocuementsInBucket, uploadProfilePictureToBucket, uploadTaxiDocumentsToBucket } from "./resolverUtils/AwsBucketFunctions";
+import { 
+  createClientBucket, 
+  deletContentAndBucketFromUser, 
+  updateTaxiDocuementsInBucket, 
+  uploadProfilePictureToBucket, 
+  // uploadTaxiDocumentsToBucket 
+} from "./resolverUtils/AwsBucketFunctions";
 import { Stream } from "stream";
 import { COOKIE_NAME } from "../constants";
 import { validateTaxiRegister } from "../utils/validateTaxiRegister";
@@ -40,11 +46,11 @@ export class TaxiResolver {
     @Arg('registrationNumber', () => String) registrationNumber: string,
     @Arg('phone', () => String) phone: string,
     @Arg('sex', () => String) sex: SexType,
-    @Arg('profilePic', () => GraphQLUpload, { nullable: true }) profilePic: FileUpload,
+    @Arg('profilePic', () => GraphQLUpload, { nullable: true }) { createReadStream, filename }: FileUpload,
     @Arg('birthDate', () => String) birthDate: Date,
     @Arg('nickName', () => String) nickName: string,
     @Arg('userType', () => String) userType: UserType,
-    @Arg('documents', () => GraphQLUpload, { nullable: true }) documents: FileUpload,
+    // @Arg('documents', () => GraphQLUpload, { nullable: true }) documents: FileUpload,
   ): Promise<ResponseCreateOrUpdateTaxi | GenericError> {
 
     //Verify if there is any simple error with basic arguments
@@ -54,6 +60,14 @@ export class TaxiResolver {
     }
 
     let uploadPicUrl, uploadDocsUrl
+
+    console.log('++++++++++++++++++++++++++++++++++++++++++++++++++++')
+
+    // let profilePicFileName = profilePic.filename
+    // let documentsFileName = documents.filename
+    // let profilePicReadStream = profilePic.createReadStream
+    // console.log(profilePicReadStream)
+    // let documentsReadStream = documents.createReadStream
 
     try {
       // Creating Bucket to keep user files
@@ -69,38 +83,50 @@ export class TaxiResolver {
         }
       }
 
-      if (profilePic) {
-        try {
-          uploadPicUrl = await uploadProfilePictureToBucket(profilePic.filename, profilePic.createReadStream, cpf)
-        } catch (error) {
-          console.log(error)
+      const uploadPicResult = await uploadProfilePictureToBucket(filename, createReadStream, cpf)
 
-          await deletContentAndBucketFromUser(cpf)
-
-          return {
-            errors: [{
-              field: 'profilePicLink',
-              message: 'Problem while uploading profile piture'
-            }]
-          }
+      if (!uploadPicResult) {
+        await deletContentAndBucketFromUser(cpf)
+        return {
+          errors: [{
+            field: 'profilePicLink',
+            message: 'Problem while uploading profile piture'
+          }]
         }
       }
 
-      if (documents) {
-        try {
-          uploadDocsUrl = await uploadTaxiDocumentsToBucket(documents.filename, documents.createReadStream, cpf)
-        } catch (error) {
-          console.log(error)
+      // if (filename) {
+      //   try {
+      //     uploadPicUrl = await uploadProfilePictureToBucket(filename, createReadStream, cpf)
+      //   } catch (error) {
+      //     console.log(error.message)
 
-          await deletContentAndBucketFromUser(cpf)
-          return {
-            errors: [{
-              field: 'documents',
-              message: 'Problem while uploading documents'
-            }]
-          }
-        }
-      }
+      //     await deletContentAndBucketFromUser(cpf)
+
+      //     return {
+      //       errors: [{
+      //         field: 'profilePicLink',
+      //         message: 'Problem while uploading profile piture'
+      //       }]
+      //     }
+      //   }
+      // }
+
+      // if (documents) {
+      //   try {
+      //     uploadDocsUrl = await uploadTaxiDocumentsToBucket(documents.filename, documents.createReadStream, cpf)
+      //   } catch (error) {
+      //     console.log(error)
+
+      //     await deletContentAndBucketFromUser(cpf)
+      //     return {
+      //       errors: [{
+      //         field: 'documents',
+      //         message: 'Problem while uploading documents'
+      //       }]
+      //     }
+      //   }
+      // }
     } catch (error) {
       console.log(error.message)
     }

@@ -86,6 +86,7 @@ export async function uploadProfilePictureToBucket(fileName: any, createReadStre
 
     // set the body of the object as data to read from the file.
     params.Body = await createReadStream()
+    console.log('HIHIHIIHIHIHIHIHIHIHIHIHIHI')
     
 
     // get the current time stamp.
