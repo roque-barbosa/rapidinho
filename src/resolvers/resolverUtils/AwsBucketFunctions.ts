@@ -1,10 +1,10 @@
-import { String } from "aws-sdk/clients/cloudsearch";
 import {extname} from "path";
+import { stringify } from "querystring";
 import { promisify } from "util";
 import s3 from '../../aws'
 import { getBucketUrl } from '../../utils/getBucketUrl'
 
-export async function createClientBucket(clientCpf: String) {
+export async function createClientBucket(clientCpf: string) {
 
   //create an object to hold the name of the bucket.
   const params = {
@@ -75,18 +75,18 @@ export async function deleteClientBucket(clientCpf: String): Promise<Boolean>{
 
 }
 
-export async function uploadProfilePictureToBucket(fileName: any, createReadStream: any, clientCpf: String): Promise<String>{
+export async function uploadProfilePictureToBucket(fileName: any, fileBody: any, clientCpf: string, userType: string): Promise<String>{
     // create an object to hold the name of the bucket, key, body, and acl of the object.
     const params = {
-      Bucket: `${clientCpf}-bucket`,
+      Bucket: 'rapidinho-bucket',
       Key: '',
       Body: '',
       ACL:'public-read'
     }
 
     // set the body of the object as data to read from the file.
-    params.Body = await createReadStream()
-    console.log('HIHIHIIHIHIHIHIHIHIHIHIHIHI')
+    //params.Body = await createReadStream()
+    params.Body = fileBody
     
 
     // get the current time stamp.
@@ -94,12 +94,14 @@ export async function uploadProfilePictureToBucket(fileName: any, createReadStre
 
     // get the file extension.
     let file_extension = extname(fileName)
+    console.log('here')
 
     // set the key as a combination of the folder name, clientCpf, and the file extension of the object.
-    params.Key = `profile-picture/${clientCpf}${file_extension}`;
+    params.Key = `${userType}/${clientCpf}/profile-picture/profile-picture${file_extension}`;
 
     // promisify the upload() function so that we can use async/await syntax.
     let upload = promisify(s3.upload.bind(s3))
+    console.log(`params: ${stringify(params)}`)
 
     // upload the object.
     let result = await upload(params)
@@ -414,3 +416,14 @@ export async function deleteVeicleDocuemntsFromBucket(clientCpf: string, veicle_
     return false
   }
 }
+
+// export async function testUploadPrfilePicToBucket(clientCpf: string, fileName: string, body: any){
+//   const params = {
+//     Bucket: `${clientCpf}-bucket`,
+//     Key: `profile-picture/${clientCpf}${fileName}`,
+//     Body: body,
+//   }
+
+//   const data = await s3.upload(params).promise()
+//   return data.Location
+// }
