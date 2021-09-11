@@ -123,4 +123,21 @@ export class VeicleResolver{
     }
   }
 
+  @Query(() => VeicleResponse)
+  async getVeicles(
+  ):Promise<VeicleResponse>{
+    try{
+
+      const veicles = await VeiclesRepo.getVeicles();
+      return{
+        veicles: veicles 
+      }
+
+    }catch(error){
+       return {
+         errors: "Somethin bad happened"
+       }
+    }
+  }
+
 }

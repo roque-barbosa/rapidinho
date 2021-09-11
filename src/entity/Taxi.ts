@@ -11,7 +11,8 @@ import { Veicle } from "./Veicle";
 export enum TaxiStatus {
     AVAILABLE,
     UNAVAILABLE,
-    BLOCKED
+    BLOCKED,
+    REJECTED//Alterado
 }
 
 registerEnumType(
@@ -42,7 +43,7 @@ export class Taxi extends User {
 
     @Field(() => String)
     @Column({nullable: true})
-    documentation_link: string;
+    docmentaion_link: string;
 
     @OneToMany(() => Veicle, veicle => veicle.taxi, {onDelete: "SET NULL", onUpdate: 'CASCADE'})
     veicles: Veicle[]
@@ -55,4 +56,5 @@ export class Taxi extends User {
 
     @OneToMany(() => AvaliationClient, avaliationClient => avaliationClient.taxi, {onDelete: "SET NULL", onUpdate: 'CASCADE'})
     avaliationClient: AvaliationClient[]
+
 }

@@ -72,6 +72,10 @@ export class Run extends BaseEntity {
     acceptedAt: Date;
 
     @Field(() => String)
+    @CreateDateColumn()
+    paidAt: Date;
+
+    @Field(() => String)
     @Column()
     clientCordinates: string;
 
@@ -95,17 +99,20 @@ export class Run extends BaseEntity {
     @Column({default: RunStatus.PENDING})
     runStatus: RunStatus;
 
-    @Field(() => RunPaymentStatus)
+    @Field(() => Int)
     @Column({default: RunPaymentStatus.NOT_PAID})
     runPaymentStatus: RunPaymentStatus;
 
-    @Field(() => Client)
+    @Field(() => Int)
+    @Column({default: RunPaymentStatus.NOT_PAID})
+    runSystemPaymentStatus: number;
+
+    @Field(() => Client) 
     @ManyToOne(() => Client, client => client.runs, {onDelete: 'SET NULL', onUpdate: 'CASCADE', cascade:true, eager: true})
     client: Client;
 
     @Field(() => Taxi)
     @ManyToOne(() => Taxi, taxi => taxi.runs, {onDelete: 'SET NULL', onUpdate: 'CASCADE', cascade: false, eager: true})
     taxi: Taxi;
-
 
 }

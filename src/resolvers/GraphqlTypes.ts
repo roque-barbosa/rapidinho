@@ -7,6 +7,7 @@ import { User } from "../entity/User"
 import { Payment } from "../entity/Payment"
 import { AvaliationTaxi } from "../entity/AvaliationTaxi"
 import { AvaliationClient } from "../entity/AvaliationClient"
+import { Employee } from "../entity/Employee"
 
 // If something unexpected happens, We'll gonna return
 // a generic error with the error msg
@@ -57,6 +58,16 @@ export class ResponseCreateOrUpdateTaxi{
 }
 
 @ObjectType()
+export class ResponseCreateOrUpdateEmpoyee{
+    @Field(() => [FieldError], {nullable:true})
+    errors?: FieldError[]
+
+    @Field(() => Employee, {nullable:true})
+    empoyee?: Employee
+}
+
+
+@ObjectType()
 export class updateFilesResponse {
   @Field(() => [FieldError], {nullable:true})
     errors?: FieldError[]
@@ -78,12 +89,24 @@ export class TaxiResponse {
 }
 
 @ObjectType()
+export class EmpoyeeResponse {
+  @Field(() => String, {nullable:true})
+  errors?: string
+
+  @Field(() => [Employee], {nullable:true})
+  empoyees?: Employee[]
+
+  @Field(() => Employee, {nullable:true})
+  empoyee?: Employee
+}
+
+@ObjectType()
 export class RunsResponse {
   @Field(() => String, {nullable:true})
   errors?: string
 
-  @Field(() => Boolean, {nullable:true})
-  ret?: Boolean
+  @Field(() => String, {nullable:true})
+  ret?: string
 
   @Field(() => [Run], {nullable:true})
   runs?: Run[]
@@ -132,9 +155,6 @@ export class PaymentResponse {
 
   @Field(() => Payment, {nullable:true})
   payment?: Payment
-
-  @Field(() => String, {nullable:true})
-  payment_url?: String
 }
 
 @ObjectType()

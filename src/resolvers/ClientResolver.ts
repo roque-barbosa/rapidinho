@@ -8,10 +8,14 @@ import { GenericError, ResponseCreateOrUpdateClient } from "./GraphqlTypes";
 import { Client } from "../entity/Client";
 import argon2 from 'argon2'
 import { getConnection } from "typeorm";
-import { createClientBucket, deletContentAndBucketFromUser, deleteClientBucket, deleteFileFromClientBucket, fetchProfilePictureToBucket, uploadProfilePictureToBucket } from "./resolverUtils/AwsBucketFunctions";
 import { Stream } from "stream";
 import { validateClientUpdate } from "../utils/validateClientUpdate";
 import { COOKIE_NAME } from "../constants";
+
+import AwsManager from '../AwsManager'
+import {extname} from "path";
+import { createWriteStream } from "fs";
+
 
 declare module "express-session" { // about this module - there was a issue with session
   interface Session {            // recognizing new elements in it, so its needed to do
@@ -23,7 +27,7 @@ interface FileUpload {
   filename: string;
   mimetype: string;
   encoding: string;
-  createReadStream(): () => Stream;
+  createReadStream: () => Stream;
 }
 
 
@@ -39,11 +43,13 @@ export class ClientResolver {
     @Arg('cpf', () => String) cpf: string,
     @Arg('phone', () => String) phone: string,
     @Arg('sex', () => String) sex: SexType,
-    @Arg('profilePic', () => GraphQLUpload, { nullable: true }) { createReadStream, filename }: FileUpload,
+    @Arg('profilePic', () => GraphQLUpload, { nullable: true }) {createReadStream, filename}: FileUpload,
     @Arg('birthDate', () => String) birthDate: Date,
     @Arg('nickName', () => String) nickName: string,
     @Arg('userType', () => String) userType: UserType,
   ): Promise<ResponseCreateOrUpdateClient | GenericError> {
+
+    //const {createReadStream, filename, mimetype, encoding} = await file
 
     //Verify if there is any simple error with basic arguments
     const errors = await validateClientRegister(nickName, email, password, phone, cpf)
@@ -54,23 +60,19 @@ export class ClientResolver {
     let client: any;
     try {
 
-      // Creating Bucket to keep user files
-      const resultCreateBucket = await createClientBucket(cpf)
-
-      // Deleting user in case creating bucket fails
-      if (!resultCreateBucket) {
-        return {
-          errors: [{
-            field: 'profilePicLink',
-            message: 'Problem with our image servers'
-          }]
-        }
-      }
-
-      const uploadPicResult = await uploadProfilePictureToBucket(filename, createReadStream, cpf)
-
-      if (!uploadPicResult) {
-        await deleteClientBucket(cpf)
+      new Promise(async (resolve, reject) => {
+        createReadStream()
+          .pipe(createWriteStream(__dirname + `/../../temp/images/${filename}`))
+          .on("finish", () => resolve(true))
+          .on("error", (err: any) => {
+            console.log(err)
+            reject(false)
+          })
+      });
+      
+      const uploadResultUrl = await AwsManager.sendFileToBucket(filename, `client/${cpf}/profile-picture/profile-picture${extname(filename)}`)
+      
+      if (!uploadResultUrl) {
         return {
           errors: [{
             field: 'profilePicLink',
@@ -92,7 +94,7 @@ export class ClientResolver {
           phone: phone,
           sex: sex,
           // @ts-ignore
-          profilePicLink: uploadPicResult.url,
+          profilePicLink: uploadResultUrl,
           birthDate: birthDate,
           nickName: nickName,
           userType: userType
@@ -120,7 +122,7 @@ export class ClientResolver {
     @Arg('cpf', () => String) cpf: string,
     @Arg('phone', () => String) phone: string,
     @Arg('sex', () => String) sex: SexType,
-    @Arg('profilePic', () => GraphQLUpload, { nullable: true }) { createReadStream, filename }: FileUpload,
+    @Arg('profilePic', () => GraphQLUpload, { nullable: true }) profilePic: FileUpload,
     @Arg('birthDate', () => String) birthDate: Date,
     @Arg('nickName', () => String) nickName: string,
     @Arg('userType', () => String) userType: UserType,
@@ -142,19 +144,21 @@ export class ClientResolver {
       return { errors }
     }
 
-    // let client: any;
     try {
 
-      const clientPic = await fetchProfilePictureToBucket(client.cpf)
-      const clientPicKey = clientPic[0].key
-      let uploadPicUrl
+      new Promise(async (resolve, reject) => {
+        profilePic.createReadStream()
+          .pipe(createWriteStream(__dirname + `/../../temp/images/${profilePic.filename}`))
+          .on("finish", () => resolve(true))
+          .on("error", (err: any) => {
+            console.log(err)
+            reject(false)
+          })
+      });
 
-      await deleteFileFromClientBucket(client.cpf, clientPicKey)
-
-      try {
-        uploadPicUrl = await uploadProfilePictureToBucket(filename, createReadStream, cpf)
-      } catch {
-        await deleteClientBucket(cpf)
+      const uploadResultUrl = await AwsManager.sendFileToBucket(profilePic.filename, `client/${cpf}/profile-picture/profile-picture${extname(profilePic.filename)}`)
+      console.log(uploadResultUrl)
+      if (!uploadResultUrl) {
         return {
           errors: [{
             field: 'profilePicLink',
@@ -162,6 +166,7 @@ export class ClientResolver {
           }]
         }
       }
+
       // Updating client on databse
       await clientRepo.updateClient(
         id_client,
@@ -170,7 +175,7 @@ export class ClientResolver {
         cpf,
         phone,
         sex,
-        uploadPicUrl,
+        uploadResultUrl,
         birthDate,
         nickName,
         userType
@@ -238,16 +243,11 @@ export class ClientResolver {
 
     try {
 
-      const resultDeleteBucket = await deletContentAndBucketFromUser(client.cpf)
+      const resultDeleteFiles = await AwsManager.deleteFileFromBucket(`client/${client.cpf}/profile-picture/profile-picture.pdf`)
 
-      // const clientPic = await fetchProfilePictureToBucket(client.cpf)
-      // const clientPicKey = clientPic[0].key
 
-      // await deleteFileFromClientBucket(client.cpf, clientPicKey)
 
-      // const resultDeleteBucket = await deleteClientBucket(client.cpf)
-
-      if (resultDeleteBucket) {
+      if (resultDeleteFiles) {
         Client.delete(id_client)
         return true
       }
@@ -278,6 +278,20 @@ export class ClientResolver {
   ) {
     try {
       const client = await Client.findOne({ where: { id: id_client } });
+      return client;
+    } catch (error) {
+      return {
+        message: error.message
+      }
+    }
+  }
+
+  @Query(() => Client || GenericError)
+  async getClientByCpf(
+    @Arg('cpf_client', () => String) cpf_client: string
+  ) {
+    try {
+      const client = await Client.findOne({ where: { cpf: cpf_client } });
       return client;
     } catch (error) {
       return {

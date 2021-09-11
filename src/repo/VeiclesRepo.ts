@@ -18,6 +18,11 @@ class VeiclesRepo{
         return veicles;
     }
 
+    async getVeicles(){
+        const veicles = await Veicle.find();
+        return veicles;
+    }
+
     
 }
 

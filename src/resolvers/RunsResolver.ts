@@ -4,7 +4,7 @@ import { GenericError, RunsResponse } from "./GraphqlTypes";
 import RunRepo from "../repo/RunRepo";
 import TaxiRepo from "../repo/TaxiRepo";
 import { float } from "aws-sdk/clients/lightsail";
-import { TaxiStatus } from "../entity/Taxi";
+import { Taxi, TaxiStatus } from "../entity/Taxi";
 
 declare module "express-session" { // about this module - there was a issue with session
   interface Session {            // recognizing new elements in it, so its needed to do
@@ -72,6 +72,8 @@ export class RunsResolver{
           }
       }
 
+      await RunRepo.setRunToTaxi(id_run, result!);
+
       const response = await TaxiRepo.updateStatus(id_taxi, TaxiStatus.AVAILABLE);
       if(response == false){
         return {
@@ -106,7 +108,7 @@ export class RunsResolver{
       await RunRepo.updateStatus(id_run, RunStatus.OPEN);
       
       return {
-        ret: true
+        ret: "true"
       }
 
     } catch (error) {
@@ -134,7 +136,7 @@ export class RunsResolver{
       await RunRepo.updateStatus(id_run, RunStatus.CLOSED);
       
       return {
-        ret: true
+        ret: "true"
       }
 
     } catch (error) {
@@ -163,13 +165,93 @@ export class RunsResolver{
       await RunRepo.updateStatus(id_run, RunStatus.CANCELED);
       
       return {
-        ret: true
+        ret: "true"
       }
 
     } catch (error) {
       return {
         errors: "Somethin bad happened"
       }
+    }
+  }
+
+  /* ------------------------------------ RUNS SET TO PAID BY SYSTEM -----------------------------------------*/
+
+  @Mutation(() => String)
+  async setRunsSystemPaid(
+    @Arg('id_taxi', () => Int) id_taxi: number
+  ){
+    try {
+
+      const taxi = await TaxiRepo.getTaxiById(id_taxi);
+
+      //if(result?.runStatus != RunStatus.PENDING){
+     //   return "Operation Not Valid"
+     // }
+
+     const runs = await RunRepo.getRunsByTaxi(taxi!);
+
+     for(let cont = 0; cont < runs.length; cont++){
+       //if(runs[cont].runPaymentStatus = RunPaymentStatus.PAID){
+        console.log(runs[cont].id);
+        await RunRepo.setRunToPaidSystem(runs[cont].id);
+       //}
+     }
+      
+      return "true"
+
+    } catch (error) {
+      return {
+        message:"Somethin bad happened"
+      }
+    }
+  }
+
+  /* ------------------------------------ RUN SET TO PAID BY SYSTEM -----------------------------------------*/
+
+  @Mutation(() => String)
+  async setRunSystemPaid(
+    @Arg('id_run', () => Int) id_run: number
+  ){
+    try {
+
+      const result = await RunRepo.getRunsById(id_run);
+
+      if(result?.runStatus != RunStatus.PENDING){
+        return "Operation Not Valid"
+      }
+
+      await RunRepo.setRunToPaidSystem(id_run);
+      
+      return "true"
+
+    } catch (error) {
+      return {
+        message:"Somethin bad happened"
+      }
+    }
+  }
+
+  /* ------------------------------------------ GET RUNS BY TAXI AND PAYMENT ------------------------------------- */
+
+  @Query(() => RunsResponse)
+  async getRunsByTaxiAndPayment(
+      @Arg('id_taxi', () => Int) id_taxi: number
+  ):Promise<RunsResponse>{
+    try{
+
+      const taxi = await TaxiRepo.getTaxiById(id_taxi);
+
+      const run = await RunRepo.getRunsByTaxiAndPayments(taxi!);
+
+      return{
+        runs:run
+      }
+
+    }catch(error){
+       return {
+         errors: "Somethin bad happened"
+       }
     }
   }
 
@@ -353,5 +435,93 @@ export class RunsResolver{
        }
     }
   }
+
+  @Query(() => RunsResponse)
+  async getRuns(
+  ):Promise<RunsResponse>{
+    try{
+
+      const runs = await RunRepo.getRuns();
+      return{
+        runs: runs
+      };
+    
+    }catch(error){
+       return{
+         errors:"Something bad hapenned"
+       }
+    }
+  }
+
+  @Query(()=> RunsResponse)
+    async getRunPaymentYield(
+        @Arg('data_initial', ()=> String) data_initial: string,
+        @Arg('data_final', ()=> String) data_final: string
+    ):Promise<RunsResponse>{
+        try{
+            const result = await RunRepo.getRunPaymentYield(data_initial, data_final);
+
+            for(let cont = 0; cont < result.length; cont++){
+              const taxi = await TaxiRepo.getTaxiById(result[cont].taxiId);
+              if(taxi == null){
+                let taxi = new Taxi;
+                taxi.id = -1;
+                result[cont].taxi = taxi;
+              }else{
+                result[cont].taxi = taxi;
+              }
+          }
+
+            return{
+                runs: result
+            }
+        }catch(error){
+            return{
+                errors: error
+            }
+        }
+    }
+
+    @Query(()=> RunsResponse)
+    async getRunPaymentYieldTaxiID(
+        @Arg('data_initial', ()=> String) data_initial: string,
+        @Arg('data_final', ()=> String) data_final: string,
+        @Arg('id_taxi', ()=> Int) id_taxi: number
+    ):Promise<RunsResponse>{
+        try{
+            const result = await RunRepo.getRunPaymentYieldTaxiID(data_initial, data_final, id_taxi);
+            return{
+                runs: result
+            }
+        }catch(error){
+            return{
+                errors: error
+            }
+        }
+    }
+
+    @Query(()=> RunsResponse)
+    async getRunByPaymentSystem(
+    ):Promise<RunsResponse>{
+        try{
+            const result = await RunRepo.getRunByPaymentSystem();
+            for(let cont = 0; cont < result.length; cont++){
+              let taxi = new Taxi;
+              if(result[cont].taxi == null){
+                console.log("Entrou");
+                taxi.id = -2;
+                result[cont].taxi = taxi;
+              }else{
+              }
+          }
+            return{
+                runs: result
+            }
+        }catch(error){
+            return{
+                errors: error
+            }
+        }
+    }
 
 }

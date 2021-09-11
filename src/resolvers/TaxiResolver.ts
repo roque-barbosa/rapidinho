@@ -4,19 +4,15 @@ import { GraphQLUpload } from 'graphql-upload'
 import { SexType, UserType } from "../entity/User";
 import { GenericError, ResponseCreateOrUpdateTaxi, TaxiResponse, updateFilesResponse } from "./GraphqlTypes";
 import argon2 from 'argon2'
-import { 
-  createClientBucket, 
-  deletContentAndBucketFromUser, 
-  updateTaxiDocuementsInBucket, 
-  uploadProfilePictureToBucket, 
-  // uploadTaxiDocumentsToBucket 
-} from "./resolverUtils/AwsBucketFunctions";
 import { Stream } from "stream";
 import { COOKIE_NAME } from "../constants";
 import { validateTaxiRegister } from "../utils/validateTaxiRegister";
 import taxiRepo from "../repo/TaxiRepo";
 import TaxiRepo from "../repo/TaxiRepo";
 import { Taxi } from "../entity/Taxi";
+import AwsManager from "../AwsManager";
+import { extname } from "path";
+import { createWriteStream } from "fs";
 
 declare module "express-session" { // about this module - there was a issue with session
   interface Session {            // recognizing new elements in it, so its needed to do
@@ -28,7 +24,7 @@ interface FileUpload {
   filename: string;
   mimetype: string;
   encoding: string;
-  createReadStream(): () => Stream;
+  createReadStream: () => Stream;
 }
 
 
@@ -46,12 +42,12 @@ export class TaxiResolver {
     @Arg('registrationNumber', () => String) registrationNumber: string,
     @Arg('phone', () => String) phone: string,
     @Arg('sex', () => String) sex: SexType,
-    @Arg('profilePic', () => GraphQLUpload, { nullable: true }) { createReadStream, filename }: FileUpload,
+    @Arg('profilePic', () => GraphQLUpload, { nullable: true }) profilePic: FileUpload,
     @Arg('birthDate', () => String) birthDate: Date,
     @Arg('nickName', () => String) nickName: string,
     @Arg('userType', () => String) userType: UserType,
-    // @Arg('documents', () => GraphQLUpload, { nullable: true }) documents: FileUpload,
   ): Promise<ResponseCreateOrUpdateTaxi | GenericError> {
+
 
     //Verify if there is any simple error with basic arguments
     const errors = await validateTaxiRegister(nickName, email, password, phone, cpf, cnh, registrationNumber)
@@ -59,34 +55,24 @@ export class TaxiResolver {
       return { errors }
     }
 
-    let uploadPicUrl, uploadDocsUrl
 
-    console.log('++++++++++++++++++++++++++++++++++++++++++++++++++++')
-
-    // let profilePicFileName = profilePic.filename
-    // let documentsFileName = documents.filename
-    // let profilePicReadStream = profilePic.createReadStream
-    // console.log(profilePicReadStream)
-    // let documentsReadStream = documents.createReadStream
+    let taxi: any
 
     try {
-      // Creating Bucket to keep user files
-      const resultCreateBucket = await createClientBucket(cpf)
 
-      // Deleting user in case creating bucket fails
-      if (!resultCreateBucket) {
-        return {
-          errors: [{
-            field: 'profilePicLink',
-            message: 'Problem with our image servers'
-          }]
-        }
-      }
-
-      const uploadPicResult = await uploadProfilePictureToBucket(filename, createReadStream, cpf)
-
-      if (!uploadPicResult) {
-        await deletContentAndBucketFromUser(cpf)
+      new Promise(async (resolve, reject) => {
+        profilePic.createReadStream()
+          .pipe(createWriteStream(__dirname + `/../../temp/images/${profilePic.filename}`))
+          .on("finish", () => resolve(true))
+          .on("error", (err: any) => {
+            console.log(err)
+            reject(false)
+          })
+      });
+      
+      const uploadResultUrl = await AwsManager.sendFileToBucket(profilePic.filename, `taxi/${cpf}/profile-picture/profile-picture${extname(profilePic.filename)}`)
+      
+      if (!uploadResultUrl) {
         return {
           errors: [{
             field: 'profilePicLink',
@@ -95,62 +81,32 @@ export class TaxiResolver {
         }
       }
 
-      // if (filename) {
-      //   try {
-      //     uploadPicUrl = await uploadProfilePictureToBucket(filename, createReadStream, cpf)
-      //   } catch (error) {
-      //     console.log(error.message)
+      const newtaxi = await taxiRepo.CreateTaxi(
+        name,
+        email,
+        password,
+        cpf,
+        cnh,
+        registrationNumber,
+        phone,
+        sex,
+        'uploadPicResult as string',
+        birthDate,
+        nickName,
+        userType,
+        '',
+      )
 
-      //     await deletContentAndBucketFromUser(cpf)
-
-      //     return {
-      //       errors: [{
-      //         field: 'profilePicLink',
-      //         message: 'Problem while uploading profile piture'
-      //       }]
-      //     }
-      //   }
-      // }
-
-      // if (documents) {
-      //   try {
-      //     uploadDocsUrl = await uploadTaxiDocumentsToBucket(documents.filename, documents.createReadStream, cpf)
-      //   } catch (error) {
-      //     console.log(error)
-
-      //     await deletContentAndBucketFromUser(cpf)
-      //     return {
-      //       errors: [{
-      //         field: 'documents',
-      //         message: 'Problem while uploading documents'
-      //       }]
-      //     }
-      //   }
-      // }
+      taxi = newtaxi
+  
+      req.session.userId = taxi!.id // After register, lon in
+  
     } catch (error) {
       console.log(error.message)
     }
 
-    const newTaxi = await taxiRepo.CreateTaxi(
-      name,
-      email,
-      password,
-      cpf,
-      cnh,
-      registrationNumber,
-      phone,
-      sex,
-      birthDate,
-      nickName,
-      userType,
-      uploadPicUrl,
-      uploadDocsUrl
-    )
-
-    req.session.userId = newTaxi!.id // After register, lon in
-
     return {
-      taxi: newTaxi
+      taxi: taxi
     }
   }
 
@@ -168,21 +124,31 @@ export class TaxiResolver {
         }]
       }
     }
+
     try {
-      const uploadUrl = await updateTaxiDocuementsInBucket(documents.filename, documents.createReadStream, taxi.cpf)
-
-      return {
-        fileUrl: uploadUrl
+      new Promise(async (resolve, reject) => {
+        documents.createReadStream()
+          .pipe(createWriteStream(__dirname + `/../../temp/images/${documents.filename}`))
+          .on("finish", () => resolve(true))
+          .on("error", (err: any) => {
+            console.log(err)
+            reject(false)
+          })
+      });
+      
+      const uploadResultUrl = await AwsManager.sendFileToBucket(documents.filename, `taxi/${taxi.cpf}/documents/documents${extname(documents.filename)}`)
+      if (uploadResultUrl) {
+        return {
+          fileUrl: uploadResultUrl
+        }
       }
+      
     } catch (error) {
-      console.log(error)
-
-      return {
-        errors: [{
-          field: 'documents',
-          message: 'Some problem with upload files'
-        }]
-      }
+      
+    }
+    
+    return {
+      errors:[]
     }
   }
 
@@ -199,23 +165,57 @@ export class TaxiResolver {
 
     try {
 
-      const resultDeleteBucket = await deletContentAndBucketFromUser(taxi.cpf)
-
-      // const clientPic = await fetchProfilePictureToBucket(client.cpf)
-      // const clientPicKey = clientPic[0].key
-
-      // await deleteFileFromClientBucket(client.cpf, clientPicKey)
-
-      // const resultDeleteBucket = await deleteClientBucket(client.cpf)
-
-      if (resultDeleteBucket) {
-        taxiRepo.deleteTaxiById(id_taxi)
+      const taxiFiles = await AwsManager.fetchFilesFromBucket(`taxi/${taxi.cpf}/`)
+      const resultDeleteFiles = await AwsManager.deleteMultipleFilesFromBucket(taxiFiles)
+      console.log(taxiFiles)
+      if (resultDeleteFiles) {
         return true
       }
       return false
 
     } catch (error) {
       return false
+    }
+
+  }
+
+  @Mutation(() => Int)
+  async taxiUpdateStatus(
+    @Arg('id_taxi', () => Int) id_taxi: number,
+    @Arg('status', () => Int) status: number,
+  ){
+    try {
+
+      await TaxiRepo.updateStatus(id_taxi, status);
+      
+      return 1
+
+    } catch (error) {
+      return -1;
+    }
+  }
+
+  @Mutation(() => Int)
+  async taxiUpdateForEmpoyee(
+    @Arg('id_taxi', () => Int) id_taxi: number,
+    @Arg('email', () => String) email: string,
+    @Arg('password', () => String) password: string,
+    @Arg('name', () => String) name: string,
+    @Arg('nickName', () => String) nickName: string
+  ){
+    try {
+
+      const taxi = await TaxiRepo.getTaxiById(id_taxi);
+      if(taxi == null){
+        return -3;
+      }
+
+      const ret = await TaxiRepo.updateTaxiForEmployee(id_taxi, email, password, name, nickName);
+      
+      return ret;
+
+    } catch (error) {
+      return 0;
     }
   }
 
@@ -242,7 +242,7 @@ export class TaxiResolver {
     try {
       const taxi = await TaxiRepo.getTaxiByCPF(cpf_taxi);
       return {
-        taxi: taxi
+        taxis: taxi
       }
     } catch (error) {
       return {
@@ -274,7 +274,7 @@ export class TaxiResolver {
     try {
       const taxi = await TaxiRepo.getTaxiByEmail(email_taxi);
       return {
-        taxi: taxi
+        taxis: taxi
       }
     } catch (error) {
       return {
