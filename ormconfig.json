@@ -1,10 +1,10 @@
 {
    "type": "mysql",
-   "host": "localhost",
-   "port": 3306,
-   "username": "roque",
-   "password": "963512487",
-   "database": "rapidinho_db",
+   "host": "rapidinho-database-do-user-9787543-0.b.db.ondigitalocean.com",
+   "port": 25060,
+   "username": "doadmin",
+   "password": "EB9uSouwT6Z6kkaW",
+   "database": "defaultdb",
    "synchronize": true,
    "logging": false,
    "entities": [

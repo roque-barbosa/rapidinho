@@ -38,27 +38,31 @@ async function main() {
 
         await createConnection({
             "type": "mysql",
-            "url": process.env.CLEARDB_DATABASE_URL,
+            "host": "rapidinho-database-do-user-9787543-0.b.db.ondigitalocean.com",
+            "port": 25060,
+            "username": "doadmin",
+            "password": "EB9uSouwT6Z6kkaW",
+            "database": "defaultdb",
             "synchronize": true,
             "logging": false,
             "entities": [
-            "dist/entity/**/*.js"
+               "dist/entity/**/*.js"
             ],
             "migrations": [
-            "dist/migration/**/*.js"
+               "dist/migration/**/*.js"
             ],
             "subscribers": [
-            "dist/subscriber/**/*.js"
+               "dist/subscriber/**/*.js"
             ],
             "cli": {
-            "entitiesDir": "src/entity",
-            "migrationsDir": "src/migration",
-            "subscribersDir": "src/subscriber"
+               "entitiesDir": "src/entity",
+               "migrationsDir": "src/migration",
+               "subscribersDir": "src/subscriber"
             }
          }) // Create DB connection
 
         RedisStore = connectRedis(session) // Connext to redis using express session
-        redis = new Redis(process.env.REDIS_URL)
+        redis = new Redis(process.env.REDIS_URL)//TROCAR ESSA COISA PELA URL DO REDIS
     }
     
     const app = express() // Initialize express
