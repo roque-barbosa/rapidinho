@@ -19,9 +19,10 @@ import { UserResolver } from "./resolvers/UserResolver";
 import { PaymentResolver } from "./resolvers/PaymentResolver";
 import { AvaliationClientResolver } from "./resolvers/AvaliationClientResolver";
 import { AvaliationTaxiResolver } from "./resolvers/AvaliationTaxiResolver";
+import IORedis from "ioredis";
 
 async function main() {
-  let redis: any, RedisStore: any;
+  let redis: IORedis.Redis, RedisStore: any;
 
   if (process.env.NODE_ENV === "dev") {
     await createConnection();
@@ -66,6 +67,8 @@ async function main() {
         }
       },
     }); //TROCAR ESSA COISA PELA URL DO REDIS
+
+    redis.on("error", () => {});
   }
 
   const app = express(); // Initialize express
