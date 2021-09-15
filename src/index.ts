@@ -56,7 +56,7 @@ async function main() {
       password: process.env.REDIS_PASSWORD,
       username: process.env.REDIS_USER,
       db: 0,
-      maxRetriesPerRequest: null, // TODO Verificar o motivo de maxRetriesPerRequest está passando de 20 (limite aceitável)
+      maxRetriesPerRequest: 1, // TODO Verificar o motivo de maxRetriesPerRequest está passando de 20 (limite aceitável)
     }); //TROCAR ESSA COISA PELA URL DO REDIS
   }
 
