@@ -1,13 +1,13 @@
 import "reflect-metadata";
-import "dotenv/config"
-import express from 'express';
-import cors from 'cors'
-import {ApolloServer} from 'apollo-server-express'
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
 import { createConnection } from "typeorm";
-import Redis from 'ioredis'
-import session from 'express-session'
-import connectRedis from 'connect-redis'
+import Redis from "ioredis";
+import session from "express-session";
+import connectRedis from "connect-redis";
 import { COOKIE_NAME } from "./constants";
 import { ClientResolver } from "./resolvers/ClientResolver";
 import { HelloResolver } from "./resolvers/HelloResolver";
@@ -21,113 +21,112 @@ import { AvaliationClientResolver } from "./resolvers/AvaliationClientResolver";
 import { AvaliationTaxiResolver } from "./resolvers/AvaliationTaxiResolver";
 
 async function main() {
+  let redis: any, RedisStore: any;
 
-    let redis: any, RedisStore: any;
+  if (process.env.NODE_ENV === "dev") {
+    await createConnection();
 
-    if (process.env.NODE_ENV === "dev"){
-        await createConnection()
+    RedisStore = connectRedis(session);
+    redis = new Redis();
+  } else {
+    await createConnection({
+      type: "mysql",
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT!),
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      synchronize: true,
+      logging: false,
+      entities: ["dist/entity/**/*.js"],
+      migrations: ["dist/migration/**/*.js"],
+      subscribers: ["dist/subscriber/**/*.js"],
+      cli: {
+        entitiesDir: "src/entity",
+        migrationsDir: "src/migration",
+        subscribersDir: "src/subscriber",
+      },
+    }); // Create DB connection
 
-        RedisStore = connectRedis(session)
-        redis = new Redis()
-    }else {
-        // "host": process.env.DB_HOST,
-        //     "port": 3306,
-        //     "username": process.env.DB_USER,
-        //     "password": process.env.DB_PASSWORD,
-        //     "database": process.env.DB_NAME,
+    RedisStore = connectRedis(session); // Connext to redis using express session
+    redis = new Redis({
+      port: parseInt(process.env.REDIS_PORT!),
+      host: process.env.REDIS_HOST,
+      family: 4,
+      password: process.env.REDIS_PASSWORD,
+      username: process.env.REDIS_USER,
+      db: 0,
+      maxRetriesPerRequest: null, // TODO Verificar o motivo de maxRetriesPerRequest está passando de 20 (limite aceitável)
+    }); //TROCAR ESSA COISA PELA URL DO REDIS
+  }
 
-        await createConnection({
-            "type": "mysql",
-            "host": "rapidinho-database-do-user-9787543-0.b.db.ondigitalocean.com",
-            "port": 25060,
-            "username": "doadmin",
-            "password": "EB9uSouwT6Z6kkaW",
-            "database": "defaultdb",
-            "synchronize": true,
-            "logging": false,
-            "entities": [
-               "dist/entity/**/*.js"
-            ],
-            "migrations": [
-               "dist/migration/**/*.js"
-            ],
-            "subscribers": [
-               "dist/subscriber/**/*.js"
-            ],
-            "cli": {
-               "entitiesDir": "src/entity",
-               "migrationsDir": "src/migration",
-               "subscribersDir": "src/subscriber"
-            }
-         }) // Create DB connection
+  const app = express(); // Initialize express
 
-        RedisStore = connectRedis(session) // Connext to redis using express session
-        redis = new Redis(process.env.REDIS_URL)//TROCAR ESSA COISA PELA URL DO REDIS
-    }
-    
-    const app = express() // Initialize express
-
-    app.use(cors({
-        origin: '*',
-        credentials: true
-    }))
-
-    app.use(session({
-        name: COOKIE_NAME,
-        store: new RedisStore({
-            client: redis,
-            disableTouch: true
-        }),
-        cookie: {
-            maxAge: 1000 * 60 * 60 * 24 * 365,  // 10 fucking years
-            httpOnly: true,
-            sameSite: 'lax', // csrf
-            secure: false 
-        },
-        secret: "cjhgknlicjli",
-        resave: false,
-        saveUninitialized: false
-    }))
-
-    app.use(graphqlUploadExpress({ maxFileSize: 1000000000, maxFiles: 10 }))
-
-    // Apply apollo middleware
-    const apolloServer = new ApolloServer({
-        uploads: false,
-        schema: await buildSchema({
-            resolvers: [
-                ClientResolver,
-                HelloResolver,
-                TaxiResolver,
-                RunsResolver,
-                VeicleResolver, 
-                UserResolver,
-                PaymentResolver,
-                AvaliationClientResolver,
-                AvaliationTaxiResolver
-            ], 
-            validate: false 
-        }),
-        context: ({req, res}) => ({
-            req,
-            res,
-            redis
-        })
+  app.use(
+    cors({
+      origin: "*",
+      credentials: true,
     })
+  );
 
-    apolloServer.applyMiddleware({
-        app,
-        cors: false
+  app.use(
+    session({
+      name: COOKIE_NAME,
+      store: new RedisStore({
+        client: redis,
+        disableTouch: true,
+      }),
+      cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 365, // 10 fucking years
+        httpOnly: true,
+        sameSite: "lax", // csrf
+        secure: false,
+      },
+      secret: "cjhgknlicjli",
+      resave: false,
+      saveUninitialized: false,
     })
+  );
 
-    //app.use(cors)
+  app.use(graphqlUploadExpress({ maxFileSize: 1000000000, maxFiles: 10 }));
 
-    app.get('/', async (_, res) => {res.send("Hi")})
+  // Apply apollo middleware
+  const apolloServer = new ApolloServer({
+    // uploads: false,
+    schema: await buildSchema({
+      resolvers: [
+        ClientResolver,
+        HelloResolver,
+        TaxiResolver,
+        RunsResolver,
+        VeicleResolver,
+        UserResolver,
+        PaymentResolver,
+        AvaliationClientResolver,
+        AvaliationTaxiResolver,
+      ],
+      validate: false,
+    }),
+    context: ({ req, res }) => ({
+      req,
+      res,
+      redis,
+    }),
+  });
 
-    app.listen(process.env.PORT || 3333, () => {console.log('server started')})
+  apolloServer.applyMiddleware({
+    app,
+    cors: false,
+  });
 
+  //app.use(cors)
+
+  app.get("/", async (_, res) => {
+    res.send("Hi");
+  });
+
+  app.listen(process.env.PORT || 3333, () => {
+    console.log("server started");
+  });
 }
-main()
-
-
-
+main();
