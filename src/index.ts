@@ -56,7 +56,15 @@ async function main() {
       password: process.env.REDIS_PASSWORD,
       username: process.env.REDIS_USER,
       db: 0,
-      maxRetriesPerRequest: 1, // TODO Verificar o motivo de maxRetriesPerRequest está passando de 20 (limite aceitável)
+      reconnectOnError: (err) => {
+        const targetError = "READONLY";
+        if (err.message.includes(targetError)) {
+          // Only reconnect when the error contains "READONLY"
+          return true; // or `return 1;`
+        } else {
+          return false;
+        }
+      },
     }); //TROCAR ESSA COISA PELA URL DO REDIS
   }
 
